@@ -1,6 +1,6 @@
 # Interactive Stock Strategy Analysis
 
-This is a Streamlit-based web application that allows users to interactively analyze stock data and visualize the performance of various trading strategies over time.
+This is a Dash-based web application that allows users to interactively analyze stock data and visualize the performance of various trading strategies over time.
 
 ## Features
 
@@ -22,11 +22,11 @@ This is a Streamlit-based web application that allows users to interactively ana
    ```bash
    pip install -r requirements.txt
    ```
-4. Run the Streamlit app:
+4. Run the Dash app:
    ```bash
-   streamlit run app.py
+   python app.py
    ```
-5. Open your web browser to the provided local URL (typically `http://localhost:8501`).
+5. Open your web browser to the provided local URL (typically `http://localhost:8050`).
 
 ## How to use
 1. **Ticker Selection:** In the main top control panel, type a valid symbol (e.g., `AAPL`, `MSFT`, `TSLA`) into the "Stock Ticker Symbol" field. The application remembers up to your last 20 searched tickers.
