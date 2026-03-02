@@ -1,0 +1,9 @@
+/* Hide the numerical inputs associated with the RangeSlider 
+   so they don't appear as weird white boxes when using ordinal dates */
+#date-range-slider .dash-input-container {
+    display: none !important;
+}
+
+#date-range-slider .dash-slider-wrapper {
+    margin-top: 10px; /* Adjust spacing to look cleaner without inputs */
+}
