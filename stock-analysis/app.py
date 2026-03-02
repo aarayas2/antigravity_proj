@@ -8,17 +8,34 @@ from utils import load_data, apply_strategy, calculate_metrics
 st.set_page_config(page_title="Interactive Stock Analysis", layout="wide")
 st.title("📈 Interactive Stock Strategy Analysis")
 
-# Sidebar - User Inputs
-st.sidebar.header("Configuration")
-ticker = st.sidebar.text_input("Stock Ticker Symbol", value="AAPL").upper()
-strategy = st.sidebar.selectbox("Trading Strategy", ["SMA Crossover", "Bollinger Bands", "RSI", "MACD"])
+# Configuration UI
+col1, col2, col3 = st.columns([1, 1, 2])
 
-end_date_default = datetime.date.today()
-start_date_default = end_date_default - datetime.timedelta(days=365)
-start_date = st.sidebar.date_input("Start Date", start_date_default)
-end_date = st.sidebar.date_input("End Date", end_date_default)
+with col1:
+    ticker = st.text_input("Stock Ticker Symbol", value="AAPL").upper()
+    
+with col2:
+    strategy = st.selectbox("Trading Strategy", ["SMA Crossover", "Bollinger Bands", "RSI", "MACD"])
 
-compute_btn = st.sidebar.button("Compute Analysis", use_container_width=True)
+with col3:
+    # Date Slider: Go back 5 years (as early as data available practically), up to today
+    max_date = datetime.date.today()
+    min_date = max_date - datetime.timedelta(days=365 * 5) 
+    
+    # Set default dates to the past 1 year, with intervals of ~6 months
+    default_start = max_date - datetime.timedelta(days=365)
+    
+    date_range = st.slider(
+        "Date Range",
+        min_value=min_date,
+        max_value=max_date,
+        value=(default_start, max_date),
+        step=datetime.timedelta(days=180), # ~6 months interval
+        format="YYYY-MM-DD"
+    )
+    start_date, end_date = date_range
+
+compute_btn = st.button("Compute Analysis", use_container_width=True)
 
 if compute_btn or "app_state" not in st.session_state:
     st.session_state["app_state"] = "loaded"
