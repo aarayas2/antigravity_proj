@@ -1,0 +1,121 @@
+import yfinance as yf
+import pandas as pd
+import pandas_ta as ta
+import numpy as np
+import datetime
+
+def load_data(ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
+    """Fetches historical stock data from Yahoo Finance."""
+    try:
+        df = yf.download(ticker, start=start_date, end=end_date)
+        if df.empty:
+            return None
+        # Flatten multi-index columns if present (yfinance returns multi-index for some tickers)
+        if isinstance(df.columns, pd.MultiIndex):
+            df.columns = df.columns.get_level_values(0)
+        return df
+    except Exception as e:
+        print(f"Error downloading data for {ticker}: {e}")
+        return None
+
+def apply_strategy(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
+    """Applies the selected trading strategy and calculates indicators."""
+    df = df.copy()
+    
+    if strategy == "SMA Crossover":
+        # Calculate Short (20) and Long (50) SMAs
+        df.ta.sma(length=20, append=True, col_names=("SMA_20",))
+        df.ta.sma(length=50, append=True, col_names=("SMA_50",))
+        
+        # Generate Signals: 1 for Buy (Short > Long), -1 for Sell (Short < Long)
+        df['Signal'] = 0.0
+        df['Signal'] = np.where(df['SMA_20'] > df['SMA_50'], 1.0, 0.0)
+        df['Position'] = df['Signal'].diff() # 1 = Buy entry, -1 = Sell entry
+        
+    elif strategy == "Bollinger Bands":
+        # Calculate Bollinger Bands
+        # Returns BBL_5_2.0, BBM_5_2.0, BBU_5_2.0 by default, we'll name them explicitly
+        bbands = df.ta.bbands(length=20, std=2)
+        if bbands is not None:
+            df = pd.concat([df, bbands], axis=1)
+            # Signal: Buy when price crosses below lower band, Sell when price crosses above upper band
+            df['Signal'] = 0.0
+            # Condition for Buy (Close < Lower Band) - mean reversion
+            df.loc[df['Close'] < df['BBL_20_2.0_2.0'], 'Signal'] = 1.0
+            # Condition for Sell (Close > Upper Band)
+            df.loc[df['Close'] > df['BBU_20_2.0_2.0'], 'Signal'] = -1.0
+            
+            # For B-Bands, standard signals mean hold until opposite signal.
+            # Simplified for visual purposes: just show the areas outside the bands.
+            df['Position'] = df['Signal']
+
+    elif strategy == "RSI":
+        df.ta.rsi(length=14, append=True, col_names=("RSI_14",))
+        
+        df['Signal'] = 0.0
+        # Buy when RSI < 30 (Oversold), Sell when RSI > 70 (Overbought)
+        df.loc[df['RSI_14'] < 30, 'Signal'] = 1.0
+        df.loc[df['RSI_14'] > 70, 'Signal'] = -1.0
+        df['Position'] = df['Signal']
+        
+    elif strategy == "MACD":
+        macd = df.ta.macd(fast=12, slow=26, signal=9)
+        if macd is not None:
+             df = pd.concat([df, macd], axis=1)
+             
+             # Buy when MACD > MACD Signal, Sell when MACD < MACD Signal
+             df['Signal'] = 0.0
+             df['Signal'] = np.where(df['MACD_12_26_9'] > df['MACDs_12_26_9'], 1.0, 0.0)
+             df['Position'] = df['Signal'].diff()
+
+    return df
+
+def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
+    """Calculates basic performance metrics from the generated signals."""
+    if 'Position' not in df.columns or df['Position'].abs().sum() == 0:
+        return {"Total Return": "0.00%", "Number of Trades": 0, "Win Rate": "0.00%"}
+
+    initial_capital = 10000.0
+    capital = initial_capital
+    position_size = 0 # Number of shares held
+    
+    trades = 0
+    winning_trades = 0
+    
+    buy_price = 0
+
+    # Extremely simplified backtest loop just for display metrics
+    for i in range(len(df)):
+        price = df['Close'].iloc[i]
+        pos = df['Position'].iloc[i]
+        
+        if pos == 1.0 and capital > price: # Buy
+            shares_to_buy = capital // price
+            position_size += shares_to_buy
+            capital -= shares_to_buy * price
+            buy_price = price
+        elif pos == -1.0 and position_size > 0: # Sell
+            capital += position_size * price
+            
+            trades += 1
+            if price > buy_price:
+                 winning_trades += 1
+            
+            position_size = 0
+            buy_price = 0
+
+    # Close out open position at the end
+    if position_size > 0:
+         capital += position_size * df['Close'].iloc[-1]
+         trades += 1
+         if df['Close'].iloc[-1] > buy_price:
+             winning_trades += 1
+
+    total_return = ((capital - initial_capital) / initial_capital) * 100
+    win_rate = (winning_trades / trades * 100) if trades > 0 else 0
+    
+    return {
+        "Total Return": f"{total_return:.2f}%",
+        "Number of Trades": trades,
+        "Win Rate": f"{win_rate:.2f}%"
+    }
