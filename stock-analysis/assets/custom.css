@@ -12,3 +12,7 @@
 #date-range-slider .dash-slider-mark {
     color: #f8f9fa !important;
 }
+
+#date-range-slider .rc-slider-mark-text {
+    white-space: nowrap;
+}
