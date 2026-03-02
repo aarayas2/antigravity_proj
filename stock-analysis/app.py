@@ -141,6 +141,26 @@ if compute_btn or "app_state" not in st.session_state:
                 if main_row: fig.add_trace(trace, row=main_row, col=1)
                 else: fig.add_trace(trace)
 
+            # Draw trade duration windows
+            trades_history = metrics.get("Trades History", [])
+            for trade in trades_history:
+                # Green window for profitable trades, red for unprofitable
+                color = "green" if trade['profit'] > 0 else "red"
+                if main_row:
+                    fig.add_vrect(
+                        x0=trade['entry_date'], x1=trade['exit_date'],
+                        fillcolor=color, opacity=0.2,
+                        layer="below", line_width=0,
+                        row=main_row, col=1
+                    )
+                else:
+                    fig.add_vrect(
+                        x0=trade['entry_date'], x1=trade['exit_date'],
+                        fillcolor=color, opacity=0.2,
+                        layer="below", line_width=0
+                    )
+
+
 
             # Layout updates
             fig.update_layout(height=700, template="plotly_dark" if st.session_state.get('theme') == 'dark' else "plotly_white",
