@@ -5,6 +5,7 @@ import datetime
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from utils import load_data, apply_strategy, calculate_metrics
+from strategy import STRATEGIES
 import pandas as pd
 
 # Dash App Initialization
@@ -48,12 +49,7 @@ app.layout = dbc.Container([
             dbc.Label("Trading Strategy"),
             dcc.Dropdown(
                 id="strategy-dropdown",
-                options=[
-                    {"label": "SMA Crossover", "value": "SMA Crossover"},
-                    {"label": "Bollinger Bands", "value": "Bollinger Bands"},
-                    {"label": "RSI", "value": "RSI"},
-                    {"label": "MACD", "value": "MACD"}
-                ],
+                options=[{"label": k, "value": k} for k in STRATEGIES.keys()],
                 value="SMA Crossover",
                 clearable=False,
                 style={"color": "black"} # Ensure dropdown text is visible in dark mode
@@ -160,7 +156,11 @@ def update_analysis(n_clicks, ticker, strategy, date_range, mru_data):
     ], className="mb-4")
 
     # Plotly Figure
-    if strategy in ["RSI", "MACD"]:
+    needs_subplots = False
+    if strategy in STRATEGIES:
+        needs_subplots = STRATEGIES[strategy]["needs_subplots"]()
+
+    if needs_subplots:
         fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
                             row_heights=[0.7, 0.3],
                             vertical_spacing=0.08)
@@ -174,6 +174,7 @@ def update_analysis(n_clicks, ticker, strategy, date_range, mru_data):
             def add_trace(self, trace, row=None, col=None): self.fig.add_trace(trace)
             def update_layout(self, **kwargs): self.fig.update_layout(**kwargs)
             def add_vrect(self, **kwargs): self.fig.add_vrect(**kwargs)
+            def add_hline(self, **kwargs): self.fig.add_hline(**kwargs)
         fig_wrapper = MockFig(fig)
         fig = fig_wrapper.fig # Overwrite for simplicity in charting later
         main_row = None
@@ -191,49 +192,15 @@ def update_analysis(n_clicks, ticker, strategy, date_range, mru_data):
     else:
         fig.add_trace(candlestick)
 
-    # Overlays based on Strategy
-    if strategy == "SMA Crossover":
-         if main_row:
-             fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['SMA_20'], line=dict(color='orange', width=1.5), name='SMA 20'), row=main_row, col=1)
-             fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['SMA_50'], line=dict(color='blue', width=1.5), name='SMA 50'), row=main_row, col=1)
-         else:
-             fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['SMA_20'], line=dict(color='orange', width=1.5), name='SMA 20'))
-             fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['SMA_50'], line=dict(color='blue', width=1.5), name='SMA 50'))
-    
-    elif strategy == "Bollinger Bands":
-         if 'BBU_20_2.0_2.0' in df_with_signals.columns:
-             if main_row:
-                 fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['BBU_20_2.0_2.0'], line=dict(color='gray', width=1, dash='dot'), name='Upper Band'), row=main_row, col=1)
-                 fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['BBL_20_2.0_2.0'], line=dict(color='gray', width=1, dash='dot'), name='Lower Band', fill='tonexty'), row=main_row, col=1)
-                 fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['BBM_20_2.0_2.0'], line=dict(color='blue', width=1.5), name='Middle Band'), row=main_row, col=1)
-             else:
-                 fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['BBU_20_2.0_2.0'], line=dict(color='gray', width=1, dash='dot'), name='Upper Band'))
-                 fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['BBL_20_2.0_2.0'], line=dict(color='gray', width=1, dash='dot'), name='Lower Band', fill='tonexty'))
-                 fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['BBM_20_2.0_2.0'], line=dict(color='blue', width=1.5), name='Middle Band'))
-
-    # Subplot Indicators
-    elif strategy == "RSI":
-         fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['RSI_14'], line=dict(color='purple', width=1.5), name='RSI 14'), row=sub_row, col=1)
-         # Add overbought/oversold levels
-         fig.add_hline(y=70, line_dash="dot", line_color="red", row=sub_row, col=1)
-         fig.add_hline(y=30, line_dash="dot", line_color="green", row=sub_row, col=1)
-    
-    elif strategy == "MACD":
-         if 'MACD_12_26_9' in df_with_signals.columns:
-             fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['MACD_12_26_9'], line=dict(color='blue', width=1.5), name='MACD Line'), row=sub_row, col=1)
-             fig.add_trace(go.Scatter(x=df_with_signals.index, y=df_with_signals['MACDs_12_26_9'], line=dict(color='orange', width=1.5), name='Signal Line'), row=sub_row, col=1)
-             # Histogram
-             colors = ['green' if val >= 0 else 'red' for val in df_with_signals['MACDh_12_26_9']]
-             fig.add_trace(go.Bar(x=df_with_signals.index, y=df_with_signals['MACDh_12_26_9'], marker_color=colors, name='MACD Hist'), row=sub_row, col=1)
+    # Add Strategy Traces
+    if strategy in STRATEGIES:
+        STRATEGIES[strategy]["add_traces"](fig, df_with_signals, main_row, sub_row)
 
     # Plot Buy/Sell signals on main chart
-    buy_signals = df_with_signals[df_with_signals['Signal'] == 1.0] if 'Signal' in df_with_signals.columns else pd.DataFrame()
-    sell_signals = df_with_signals[df_with_signals['Signal'] == -1.0] if 'Signal' in df_with_signals.columns else pd.DataFrame()
-    
-    # Use 'Position' diff for crossover entries instead of raw Signals to avoid plotting on every bar
-    if strategy in ["SMA Crossover", "MACD"]:
-         buy_signals = df_with_signals[df_with_signals['Position'] == 1.0]
-         sell_signals = df_with_signals[df_with_signals['Position'] == -1.0]
+    buy_signals = pd.DataFrame()
+    sell_signals = pd.DataFrame()
+    if strategy in STRATEGIES:
+        buy_signals, sell_signals = STRATEGIES[strategy]["get_signals"](df_with_signals)
     
     if not buy_signals.empty:
         trace = go.Scatter(x=buy_signals.index, y=buy_signals['Low'] * 0.98,
