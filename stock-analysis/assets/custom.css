@@ -7,3 +7,8 @@
 #date-range-slider .dash-slider-wrapper {
     margin-top: 10px; /* Adjust spacing to look cleaner without inputs */
 }
+
+/* Make the text labels below the slider visible on dark background */
+#date-range-slider .dash-slider-mark {
+    color: #f8f9fa !important;
+}
