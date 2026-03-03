@@ -1,22 +1,101 @@
+import os
+import json
 import yfinance as yf
 import pandas as pd
 import pandas_ta as ta
 import numpy as np
 import datetime
 
-def load_data(ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
-    """Fetches historical stock data from Yahoo Finance."""
-    try:
-        df = yf.download(ticker, start=start_date, end=end_date)
-        if df.empty:
-            return None
-        # Flatten multi-index columns if present (yfinance returns multi-index for some tickers)
-        if isinstance(df.columns, pd.MultiIndex):
-            df.columns = df.columns.get_level_values(0)
-        return df
-    except Exception as e:
-        print(f"Error downloading data for {ticker}: {e}")
+class StockDataCache:
+    def __init__(self, data_dir="data"):
+        # Make the data_dir relative to the location of utils.py
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        self.data_dir = os.path.join(base_dir, data_dir)
+        if not os.path.exists(self.data_dir):
+            os.makedirs(self.data_dir)
+
+    def _get_file_path(self, ticker: str) -> str:
+        return os.path.join(self.data_dir, f"{ticker}.json")
+
+    def get_data(self, ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
+        file_path = self._get_file_path(ticker)
+        
+        if os.path.exists(file_path):
+            try:
+                # Load existing cache
+                cached_df = pd.read_json(file_path, orient="table")
+                
+                # Check if we need to fetch new data
+                if not cached_df.empty:
+                    last_cached_date = cached_df.index.max().date()
+                    
+                    if end_date > last_cached_date:
+                        # Fetch missing data
+                        fetch_start = last_cached_date + datetime.timedelta(days=1)
+                        # Ensure we don't try to fetch with a negative or zero range if yf requires strictly end > start
+                        if fetch_start <= end_date:
+                            print(f"Cache hit for {ticker}. Fetching new data from {fetch_start} to {end_date}.")
+                            # Add 1 day to end_date because yfinance's end parameter is exclusive
+                            new_data = self._download_from_yf(ticker, fetch_start, end_date + datetime.timedelta(days=1))
+                        else:
+                            new_data = None
+                        
+                        if new_data is not None and not new_data.empty:
+                            # Append new data
+                            cached_df = pd.concat([cached_df, new_data])
+                            # Remove duplicates just in case
+                            cached_df = cached_df[~cached_df.index.duplicated(keep='last')]
+                            # Sort index
+                            cached_df.sort_index(inplace=True)
+                            
+                            # Overwrite cache with combined data
+                            cached_df.to_json(file_path, orient="table")
+                    else:
+                        print(f"Cache hit for {ticker}. All requested data available locally.")
+                else:
+                    # File exists but is empty, redownload full
+                    print(f"Cache for {ticker} is empty. Downloading full range.")
+                    cached_df = self._download_and_save_full(ticker, start_date, end_date, file_path)
+            except Exception as e:
+                print(f"Error reading cache for {ticker}: {e}. Redownloading.")
+                cached_df = self._download_and_save_full(ticker, start_date, end_date, file_path)
+        else:
+            # Cache miss
+            print(f"Cache miss for {ticker}. Downloading full data from {start_date} to {end_date}.")
+            cached_df = self._download_and_save_full(ticker, start_date, end_date, file_path)
+
+        if cached_df is not None and not cached_df.empty:
+            # Return only the requested date range
+            mask = (cached_df.index.date >= start_date) & (cached_df.index.date <= end_date)
+            return cached_df.loc[mask].copy()
+        
         return None
+
+    def _download_and_save_full(self, ticker: str, start_date: datetime.date, end_date: datetime.date, file_path: str) -> pd.DataFrame:
+        df = self._download_from_yf(ticker, start_date, end_date + datetime.timedelta(days=1))
+        if df is not None and not df.empty:
+            df.to_json(file_path, orient="table")
+        return df
+
+    def _download_from_yf(self, ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
+        try:
+            df = yf.download(ticker, start=start_date, end=end_date)
+            if df.empty:
+                return None
+            # Flatten multi-index columns if present
+            if isinstance(df.columns, pd.MultiIndex):
+                df.columns = df.columns.get_level_values(0)
+            return df
+        except Exception as e:
+            print(f"Error downloading data for {ticker}: {e}")
+            return None
+
+# Global cache instance
+_cache = StockDataCache()
+
+def load_data(ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
+    """Fetches historical stock data from Yahoo Finance, utilizing a local cache."""
+    return _cache.get_data(ticker, start_date, end_date)
 
 from strategy import STRATEGIES
 
