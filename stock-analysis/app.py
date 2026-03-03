@@ -3,10 +3,9 @@ from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import datetime
 import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 from utils import load_data, apply_strategy, calculate_metrics
 from strategy import STRATEGIES
-import pandas as pd
+from charting import create_strategy_chart
 
 # Dash App Initialization
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
@@ -146,93 +145,8 @@ def update_analysis(n_clicks, ticker, date_range, mru_data):
             ])), md=4),
         ], className="mb-4")
 
-        # Plotly Figure
-        needs_subplots = False
-        if strategy in STRATEGIES:
-            needs_subplots = STRATEGIES[strategy]["needs_subplots"]()
-
-        if needs_subplots:
-            fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                                row_heights=[0.7, 0.3],
-                                vertical_spacing=0.08)
-            main_row = 1
-            sub_row = 2
-        else:
-            fig = go.Figure()
-            # Dummy subplots interface compatibility
-            class MockFig:
-                def __init__(self, fig): self.fig = fig
-                def add_trace(self, trace, row=None, col=None): self.fig.add_trace(trace)
-                def update_layout(self, **kwargs): self.fig.update_layout(**kwargs)
-                def add_vrect(self, **kwargs): self.fig.add_vrect(**kwargs)
-                def add_hline(self, **kwargs): self.fig.add_hline(**kwargs)
-            fig_wrapper = MockFig(fig)
-            fig = fig_wrapper.fig # Overwrite for simplicity in charting later
-            main_row = None
-            sub_row = None
-
-        # Main Candlestick Chart
-        candlestick = go.Candlestick(x=df_with_signals.index,
-                                     open=df_with_signals['Open'],
-                                     high=df_with_signals['High'],
-                                     low=df_with_signals['Low'],
-                                     close=df_with_signals['Close'],
-                                     name="Price")
-        if main_row:
-            fig.add_trace(candlestick, row=main_row, col=1)
-        else:
-            fig.add_trace(candlestick)
-
-        # Add Strategy Traces
-        if strategy in STRATEGIES:
-            STRATEGIES[strategy]["add_traces"](fig, df_with_signals, main_row, sub_row)
-
-        # Plot Buy/Sell signals on main chart
-        buy_signals = pd.DataFrame()
-        sell_signals = pd.DataFrame()
-        if strategy in STRATEGIES:
-            buy_signals, sell_signals = STRATEGIES[strategy]["get_signals"](df_with_signals)
-        
-        if not buy_signals.empty:
-            trace = go.Scatter(x=buy_signals.index, y=buy_signals['Low'] * 0.98,
-                               mode='markers', marker=dict(symbol='triangle-up', size=12, color='green'),
-                               name='Buy Signal')
-            if main_row: fig.add_trace(trace, row=main_row, col=1)
-            else: fig.add_trace(trace)
-            
-        if not sell_signals.empty:
-            trace = go.Scatter(x=sell_signals.index, y=sell_signals['High'] * 1.02,
-                               mode='markers', marker=dict(symbol='triangle-down', size=12, color='red'),
-                               name='Sell Signal')
-            if main_row: fig.add_trace(trace, row=main_row, col=1)
-            else: fig.add_trace(trace)
-
-        # Draw trade duration windows
-        trades_history = metrics.get("Trades History", [])
-        for trade in trades_history:
-            # Green window for profitable trades, red for unprofitable
-            color = "green" if trade['profit'] > 0 else "red"
-            if main_row:
-                fig.add_vrect(
-                    x0=trade['entry_date'], x1=trade['exit_date'],
-                    fillcolor=color, opacity=0.2,
-                    layer="below", line_width=0,
-                    row=main_row, col=1
-                )
-            else:
-                fig.add_vrect(
-                    x0=trade['entry_date'], x1=trade['exit_date'],
-                    fillcolor=color, opacity=0.2,
-                    layer="below", line_width=0
-                )
-
-        # Layout updates
-        fig.update_layout(height=700, template="plotly_dark",
-                          xaxis_rangeslider_visible=False,
-                          margin=dict(l=0, r=0, t=30, b=0))
-        if main_row:
-             fig.update_xaxes(rangeslider_visible=False) # Ensure rangeslider off for all subplots
-
+        # Generate the Plotly figure
+        fig = create_strategy_chart(df_with_signals, strategy, metrics)
         chart_section = dcc.Graph(figure=fig)
 
         section = html.Div([
