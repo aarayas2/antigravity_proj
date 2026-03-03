@@ -134,15 +134,19 @@ def update_analysis(n_clicks, ticker, date_range, mru_data):
             dbc.Col(dbc.Card(dbc.CardBody([
                 html.H5("Total Return", className="card-title"),
                 html.H3(metrics["Total Return"], className="text-success" if float(metrics["Total Return"].strip('%')) >= 0 else "text-danger")
-            ])), md=4),
+            ])), md=3),
+            dbc.Col(dbc.Card(dbc.CardBody([
+                html.H5("Average Return", className="card-title"),
+                html.H3(metrics["Average Return"], className="text-success" if float(metrics["Average Return"].strip('%')) >= 0 else "text-danger")
+            ])), md=3),
             dbc.Col(dbc.Card(dbc.CardBody([
                 html.H5("Number of Trades", className="card-title"),
                 html.H3(metrics["Number of Trades"], className="text-info")
-            ])), md=4),
+            ])), md=3),
             dbc.Col(dbc.Card(dbc.CardBody([
                 html.H5("Win Rate", className="card-title"),
                 html.H3(metrics["Win Rate"], className="text-warning")
-            ])), md=4),
+            ])), md=3),
         ], className="mb-4")
 
         # Generate the Plotly figure

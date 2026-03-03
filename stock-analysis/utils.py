@@ -123,7 +123,7 @@ def apply_strategy(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
 def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     """Calculates basic performance metrics from the generated signals."""
     if 'Position' not in df.columns or df['Position'].abs().sum() == 0:
-        return {"Total Return": "0.00%", "Number of Trades": 0, "Win Rate": "0.00%", "Trades History": []}
+        return {"Total Return": "0.00%", "Average Return": "0.00%", "Number of Trades": 0, "Win Rate": "0.00%", "Trades History": []}
 
     initial_capital = 10000.0
     capital = initial_capital
@@ -162,7 +162,8 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
                 'exit_date': date,
                 'entry_price': buy_price,
                 'exit_price': price,
-                'profit': price - buy_price
+                'profit': price - buy_price,
+                'profit_pct': (price - buy_price) / buy_price * 100 if buy_price > 0 else 0
             })
             
             position_size = 0
@@ -181,14 +182,17 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
              'exit_date': df.index[-1],
              'entry_price': buy_price,
              'exit_price': exit_price,
-             'profit': exit_price - buy_price
+             'profit': exit_price - buy_price,
+             'profit_pct': (exit_price - buy_price) / buy_price * 100 if buy_price > 0 else 0
          })
 
     total_return = ((capital - initial_capital) / initial_capital) * 100
     win_rate = (winning_trades / trades * 100) if trades > 0 else 0
+    avg_return = sum([t['profit_pct'] for t in trades_history]) / len(trades_history) if trades_history else 0
     
     return {
         "Total Return": f"{total_return:.2f}%",
+        "Average Return": f"{avg_return:.2f}%",
         "Number of Trades": trades,
         "Win Rate": f"{win_rate:.2f}%",
         "Trades History": trades_history
