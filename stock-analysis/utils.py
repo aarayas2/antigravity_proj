@@ -25,33 +25,48 @@ class StockDataCache:
                 # Load existing cache
                 cached_df = pd.read_json(file_path, orient="table")
                 
-                # Check if we need to fetch new data
+                # Check if we need to fetch missing data (either older or newer)
                 if not cached_df.empty:
+                    first_cached_date = cached_df.index.min().date()
                     last_cached_date = cached_df.index.max().date()
                     
+                    needs_save = False
+                    dfs_to_concat = [cached_df]
+                    
+                    # 1. Check if we need older data
+                    if start_date < first_cached_date:
+                        fetch_end_old = first_cached_date - datetime.timedelta(days=1)
+                        if start_date <= fetch_end_old:
+                            print(f"Cache hit for {ticker}. Fetching older data from {start_date} to {fetch_end_old}.")
+                            older_data = self._download_from_yf(ticker, start_date, fetch_end_old + datetime.timedelta(days=1))
+                            if older_data is not None and not older_data.empty:
+                                dfs_to_concat.append(older_data)
+                                needs_save = True
+
+                    # 2. Check if we need newer data
                     if end_date > last_cached_date:
-                        # Fetch missing data
-                        fetch_start = last_cached_date + datetime.timedelta(days=1)
-                        # Ensure we don't try to fetch with a negative or zero range if yf requires strictly end > start
-                        if fetch_start <= end_date:
-                            print(f"Cache hit for {ticker}. Fetching new data from {fetch_start} to {end_date}.")
-                            # Add 1 day to end_date because yfinance's end parameter is exclusive
-                            new_data = self._download_from_yf(ticker, fetch_start, end_date + datetime.timedelta(days=1))
-                        else:
-                            new_data = None
+                        fetch_start_new = last_cached_date + datetime.timedelta(days=1)
+                        if fetch_start_new <= end_date:
+                            print(f"Cache hit for {ticker}. Fetching newer data from {fetch_start_new} to {end_date}.")
+                            newer_data = self._download_from_yf(ticker, fetch_start_new, end_date + datetime.timedelta(days=1))
+                            if newer_data is not None and not newer_data.empty:
+                                dfs_to_concat.append(newer_data)
+                                needs_save = True
+                    
+                    if needs_save:
+                        # Combine all data
+                        cached_df = pd.concat(dfs_to_concat)
+                        # Remove duplicates just in case
+                        cached_df = cached_df[~cached_df.index.duplicated(keep='last')]
+                        # Sort index
+                        cached_df.sort_index(inplace=True)
                         
-                        if new_data is not None and not new_data.empty:
-                            # Append new data
-                            cached_df = pd.concat([cached_df, new_data])
-                            # Remove duplicates just in case
-                            cached_df = cached_df[~cached_df.index.duplicated(keep='last')]
-                            # Sort index
-                            cached_df.sort_index(inplace=True)
-                            
-                            # Overwrite cache with combined data
-                            cached_df.to_json(file_path, orient="table")
-                    else:
+                        # Overwrite cache with combined data
+                        cached_df.to_json(file_path, orient="table")
+                        print(f"Cache updated for {ticker}.")
+                    elif start_date >= first_cached_date and end_date <= last_cached_date:
                         print(f"Cache hit for {ticker}. All requested data available locally.")
+
                 else:
                     # File exists but is empty, redownload full
                     print(f"Cache for {ticker} is empty. Downloading full range.")
