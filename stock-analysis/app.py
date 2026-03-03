@@ -3,9 +3,16 @@ from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import datetime
 import plotly.graph_objects as go
+import os
 from utils import load_data, apply_strategy, calculate_metrics
 from strategy import STRATEGIES
 from charting import create_strategy_chart
+from persistence import StatsManager, JsonStatsStorage
+
+# Initialize Persistence Layer
+DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
+STATS_FILE = os.path.join(DATA_DIR, "stats.json")
+stats_manager = StatsManager(JsonStatsStorage(STATS_FILE))
 
 # Dash App Initialization
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
@@ -124,10 +131,19 @@ def update_analysis(n_clicks, ticker, date_range, mru_data):
     mru_data = mru_data[:20]
 
     output_sections = []
+    strategies_metrics = {}
     
     for strategy in STRATEGIES.keys():
         df_with_signals = apply_strategy(df.copy(), strategy)
         metrics = calculate_metrics(df_with_signals, strategy)
+
+        # Collect metrics for persistence
+        strategies_metrics[strategy] = {
+            "Total Return": metrics["Total Return"],
+            "Average Return": metrics["Average Return"],
+            "Number of Trades": metrics["Number of Trades"],
+            "Win Rate": metrics["Win Rate"]
+        }
 
         # Metrics Section
         metrics_row = dbc.Row([
@@ -162,6 +178,12 @@ def update_analysis(n_clicks, ticker, date_range, mru_data):
             html.Hr(style={'margin-top': '40px', 'margin-bottom': '40px', 'border-top': '2px solid white'})
         ])
         output_sections.append(section)
+
+    # Trigger save logic if on Maximum date range
+    if date_range[0] == min_date_ord and date_range[1] == max_date_ord:
+        date_begin_str = start_date_obj.strftime('%Y-%m-%d')
+        date_end_str = end_date_obj.strftime('%Y-%m-%d')
+        stats_manager.save_stats(ticker, date_begin_str, date_end_str, strategies_metrics)
 
     return html.Div(output_sections), mru_data
 
