@@ -7,8 +7,12 @@ def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
     if bbands is not None and not bbands.empty and 'BBL_20_2.0_2.0' in bbands.columns and 'BBU_20_2.0_2.0' in bbands.columns:
         df = pd.concat([df, bbands], axis=1)
         df['Signal'] = 0.0
-        df.loc[df['Close'] < df['BBL_20_2.0_2.0'], 'Signal'] = 1.0
-        df.loc[df['Close'] > df['BBU_20_2.0_2.0'], 'Signal'] = -1.0
+        mask_buy = (df['Close'] < df['BBL_20_2.0_2.0']).fillna(False).to_numpy(dtype=bool)
+        mask_sell = (df['Close'] > df['BBU_20_2.0_2.0']).fillna(False).to_numpy(dtype=bool)
+
+        import numpy as np
+        df['Signal'] = np.where(mask_buy, 1.0, df['Signal'])
+        df['Signal'] = np.where(mask_sell, -1.0, df['Signal'])
         df['Position'] = df['Signal']
     return df
 
