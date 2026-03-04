@@ -31,6 +31,7 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
         
     strategies_metrics = {}
     output_sections = []
+    buy_signals = []
     
     def process_strategy(strategy):
         df_with_signals = apply_strategy(df.copy(), strategy)
@@ -44,6 +45,12 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
         }
         
         section = None
+        has_buy_signal = False
+        if is_batch_mode:
+            if not df_with_signals.empty and 'Signal' in df_with_signals.columns:
+                if df_with_signals.iloc[-1]['Signal'] == 1.0:
+                    has_buy_signal = True
+                    
         if not is_batch_mode:
             # Metrics Section
             metrics_row = dbc.Row([
@@ -78,17 +85,19 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
                 html.Hr(style={'margin-top': '40px', 'margin-bottom': '40px', 'border-top': '2px solid white'})
             ])
             
-        return strategy, strategy_metric, section
+        return strategy, strategy_metric, section, has_buy_signal
 
     with concurrent.futures.ThreadPoolExecutor() as executor:
         results = list(executor.map(process_strategy, STRATEGIES.keys()))
         
-    for strategy, strategy_metric, section in results:
+    for strategy, strategy_metric, section, has_buy_signal in results:
         strategies_metrics[strategy] = strategy_metric
         if section is not None:
             output_sections.append(section)
+        if has_buy_signal:
+            buy_signals.append(strategy)
 
-    return {"metrics": strategies_metrics, "sections": output_sections}
+    return {"metrics": strategies_metrics, "sections": output_sections, "buy_signals": buy_signals}
 
 def run_batch_mode(tickers_str: str):
     """
@@ -106,6 +115,8 @@ def run_batch_mode(tickers_str: str):
     print(f"Starting batch analysis for {len(tickers)} ticker(s) from {start_date_obj} to {end_date_obj}...")
     
     success_count = 0
+    buy_zone_signals = []
+    
     for ticker in tickers:
         print(f"[{ticker}] Starting analysis...")
         result = run_analysis_for_ticker(ticker, start_date_obj, end_date_obj, is_batch_mode=True)
@@ -120,7 +131,16 @@ def run_batch_mode(tickers_str: str):
         print(f"[{ticker}] Analysis complete and stats saved.")
         success_count += 1
         
+        if result.get("buy_signals"):
+            for strategy in result["buy_signals"]:
+                buy_zone_signals.append({"Ticker": ticker, "Strategy": strategy})
+        
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
+    
+    if buy_zone_signals:
+        print("\n--- Buy Zone Signals ---")
+        for signal in buy_zone_signals:
+            print(f"Ticker: {signal['Ticker']}, Strategy: {signal['Strategy']}")
 
 # Dash App Initialization
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], suppress_callback_exceptions=True)
