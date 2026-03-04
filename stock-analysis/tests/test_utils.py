@@ -3,10 +3,46 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import unittest
+from unittest.mock import patch, MagicMock
 import pandas as pd
-from datetime import datetime
+import datetime
 
-from utils import calculate_metrics
+from utils import calculate_metrics, load_data
+
+class TestLoadData(unittest.TestCase):
+    @patch('utils._cache')
+    def test_load_data_returns_dataframe(self, mock_cache):
+        # Arrange
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        expected_df = pd.DataFrame({'Close': [150, 155]}, index=pd.date_range(start_date, periods=2))
+        mock_cache.get_data.return_value = expected_df
+
+        # Act
+        result = load_data(ticker, start_date, end_date)
+
+        # Assert
+        mock_cache.get_data.assert_called_once_with(ticker, start_date, end_date)
+        pd.testing.assert_frame_equal(result, expected_df)
+
+    @patch('utils._cache')
+    def test_load_data_returns_none(self, mock_cache):
+        # Arrange
+        ticker = "INVALID"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        mock_cache.get_data.return_value = None
+
+        # Act
+        result = load_data(ticker, start_date, end_date)
+
+        # Assert
+        mock_cache.get_data.assert_called_once_with(ticker, start_date, end_date)
+        self.assertIsNone(result)
+
 
 class TestCalculateMetrics(unittest.TestCase):
     def test_missing_position_column(self):

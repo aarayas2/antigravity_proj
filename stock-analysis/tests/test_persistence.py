@@ -4,6 +4,7 @@ import sys
 import os
 from unittest.mock import patch, mock_open
 
+
 # Add the parent directory of stock-analysis to sys.path so we can import it
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
@@ -196,3 +197,18 @@ def test_read_valid_data_mocked(tmp_path):
     valid_data = '[{"TICKER": {"date-begin": "2023-01-01"}}]'
     with patch("builtins.open", mock_open(read_data=valid_data)):
         assert storage.read() == [{"TICKER": {"date-begin": "2023-01-01"}}]
+
+def test_write_error_path(tmp_path):
+    file_path = tmp_path / "test_write.json"
+    storage = JsonStatsStorage(str(file_path))
+    data = [{"TICKER": {"date-begin": "2023-01-01", "date-end": "2023-12-31"}}]
+
+    with patch('os.replace') as mock_replace:
+        mock_replace.side_effect = Exception("Mocked exception")
+
+        with pytest.raises(Exception, match="Mocked exception"):
+            storage.write(data)
+
+        # Verify that temp file was removed
+        temp_path = str(file_path) + '.tmp'
+        assert not os.path.exists(temp_path)
