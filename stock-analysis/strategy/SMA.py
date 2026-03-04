@@ -1,6 +1,5 @@
 import pandas as pd
 import pandas_ta
-import numpy as np
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
@@ -9,7 +8,7 @@ def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
     df.ta.sma(length=50, append=True, col_names=("SMA_50",))
     
     df['Signal'] = 0.0
-    df['Signal'] = np.where(df['SMA_20'] > df['SMA_50'], 1.0, 0.0)
+    df.loc[df['SMA_20'] > df['SMA_50'], 'Signal'] = 1.0
     df['Position'] = df['Signal'].diff()
     return df
 
