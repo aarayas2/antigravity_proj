@@ -2,12 +2,13 @@ import json
 import pytest
 import sys
 import os
-from unittest.mock import patch
+from unittest.mock import patch, mock_open
+
 
 # Add the parent directory of stock-analysis to sys.path so we can import it
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from persistence import JsonStatsStorage
+from persistence import JsonStatsStorage, StatsManager, StatsStorageStrategy
 
 def test_read_file_not_exists(tmp_path):
     file_path = tmp_path / "non_existent.json"
@@ -46,6 +47,156 @@ def test_read_malformed_json(tmp_path):
     storage = JsonStatsStorage(str(file_path))
     assert storage.read() == []
 
+def test_write_success(tmp_path):
+    file_path = tmp_path / "write.json"
+    storage = JsonStatsStorage(str(file_path))
+    data = [{"TICKER": {"date-begin": "2023-01-01", "date-end": "2023-12-31"}}]
+
+    storage.write(data)
+
+    # Verify file was written correctly
+    assert os.path.exists(str(file_path))
+    with open(file_path, 'r') as f:
+        written_data = json.load(f)
+    assert written_data == data
+
+def test_write_exception_removes_temp_file(tmp_path):
+    file_path = tmp_path / "write_fail.json"
+    storage = JsonStatsStorage(str(file_path))
+    data = [{"TICKER": {"date-begin": "2023-01-01", "date-end": "2023-12-31"}}]
+
+    # Mock os.replace to raise an exception, simulating a failure during the atomic replace
+    with patch("os.replace", side_effect=OSError("Mocked error")):
+        with pytest.raises(OSError):
+            storage.write(data)
+
+    # temp file should have been cleaned up
+    temp_path = str(file_path) + '.tmp'
+    assert not os.path.exists(temp_path)
+
+def test_write_exception_when_temp_file_doesnt_exist_anymore(tmp_path):
+    file_path = tmp_path / "write_fail_no_temp.json"
+    storage = JsonStatsStorage(str(file_path))
+    data = [{"TICKER": {"date-begin": "2023-01-01", "date-end": "2023-12-31"}}]
+
+    # Mock os.replace to raise an exception, and mock os.path.exists to return False for the temp file
+    # This hits the 'if os.path.exists(temp_path):' branch evaluating to False inside the except block
+    with patch("os.replace", side_effect=OSError("Mocked error")), \
+         patch("os.path.exists", side_effect=lambda p: False if p.endswith('.tmp') else True):
+        with pytest.raises(OSError):
+            storage.write(data)
+
+def test_stats_manager_singleton():
+    # Reset singleton instance for testing
+    StatsManager._instance = None
+
+    # Needs a strategy for first init
+    with pytest.raises(ValueError, match="A storage strategy must be provided for the first initialization."):
+        StatsManager()
+
+    class MockStorage(StatsStorageStrategy):
+        def read(self): return []
+        def write(self, data): pass
+
+    storage1 = MockStorage()
+    manager1 = StatsManager(storage1)
+
+    # Second init ignores the passed strategy and returns the same instance
+    storage2 = MockStorage()
+    manager2 = StatsManager(storage2)
+
+    assert manager1 is manager2
+    assert manager1._storage is storage1
+
+def test_stats_manager_save_stats_new_ticker(tmp_path):
+    StatsManager._instance = None
+    file_path = tmp_path / "stats.json"
+    storage = JsonStatsStorage(str(file_path))
+    manager = StatsManager(storage)
+
+    manager.save_stats(
+        ticker="AAPL",
+        date_begin="2023-01-01",
+        date_end="2023-12-31",
+        strategies_metrics={"SMA": {"profit": 100}}
+    )
+
+    data = storage.read()
+    assert len(data) == 1
+    assert "AAPL" in data[0]
+    assert data[0]["AAPL"]["date-begin"] == "2023-01-01"
+    assert data[0]["AAPL"]["date-end"] == "2023-12-31"
+    assert data[0]["AAPL"]["SMA"]["profit"] == 100
+
+def test_stats_manager_save_stats_existing_ticker_same_dates(tmp_path):
+    StatsManager._instance = None
+    file_path = tmp_path / "stats.json"
+    storage = JsonStatsStorage(str(file_path))
+    manager = StatsManager(storage)
+
+    # Initial save
+    manager.save_stats("AAPL", "2023-01-01", "2023-12-31", {"SMA": {"profit": 100}})
+
+    # Save again with same dates but different metrics
+    # It should early-return and do nothing
+    manager.save_stats("AAPL", "2023-01-01", "2023-12-31", {"SMA": {"profit": 999}})
+
+    data = storage.read()
+    assert len(data) == 1
+    assert data[0]["AAPL"]["SMA"]["profit"] == 100
+
+def test_stats_manager_save_stats_existing_ticker_diff_dates(tmp_path):
+    StatsManager._instance = None
+    file_path = tmp_path / "stats.json"
+    storage = JsonStatsStorage(str(file_path))
+    manager = StatsManager(storage)
+
+    # Initial save
+    manager.save_stats("AAPL", "2023-01-01", "2023-12-31", {"SMA": {"profit": 100}})
+
+    # Save again with different dates
+    manager.save_stats("AAPL", "2023-01-01", "2024-01-01", {"SMA": {"profit": 200}})
+
+    data = storage.read()
+    assert len(data) == 1
+    assert data[0]["AAPL"]["date-end"] == "2024-01-01"
+    assert data[0]["AAPL"]["SMA"]["profit"] == 200
+
+def test_stats_storage_strategy_abstract_methods():
+    # Calling the abstract methods should do nothing/pass
+    class ConcreteStrategy(StatsStorageStrategy):
+        def read(self):
+            super().read()
+            return []
+        def write(self, data):
+            super().write(data)
+
+    strategy = ConcreteStrategy()
+    assert strategy.read() == []
+    strategy.write([]) # Should not raise
+
+def test_read_json_decode_error_mocked(tmp_path):
+    # Mocking open to read valid looking but invalid JSON to trigger JSONDecodeError explicitly
+    file_path = tmp_path / "mocked_json.json"
+    storage = JsonStatsStorage(str(file_path))
+
+    # Ensure os.path.exists returns true so read doesn't early return
+    file_path.touch()
+
+    with patch("builtins.open", mock_open(read_data="{ invalid json")):
+        assert storage.read() == []
+
+def test_read_valid_data_mocked(tmp_path):
+    # Mocking open to read valid JSON
+    file_path = tmp_path / "mocked_valid_json.json"
+    storage = JsonStatsStorage(str(file_path))
+
+    # Ensure os.path.exists returns true so read doesn't early return
+    file_path.touch()
+
+    valid_data = '[{"TICKER": {"date-begin": "2023-01-01"}}]'
+    with patch("builtins.open", mock_open(read_data=valid_data)):
+        assert storage.read() == [{"TICKER": {"date-begin": "2023-01-01"}}]
 
 def test_write_error_path(tmp_path):
     file_path = tmp_path / "test_write.json"
