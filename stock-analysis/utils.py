@@ -5,6 +5,7 @@ import pandas as pd
 import pandas_ta as ta
 import numpy as np
 import datetime
+import re
 
 class StockDataCache:
     def __init__(self, data_dir="data"):
@@ -15,7 +16,9 @@ class StockDataCache:
             os.makedirs(self.data_dir)
 
     def _get_file_path(self, ticker: str) -> str:
-        return os.path.join(self.data_dir, f"{ticker}.json")
+        # Sanitize ticker to prevent path traversal
+        sanitized_ticker = re.sub(r'[^a-zA-Z0-9.\-=^]', '', str(ticker))
+        return os.path.join(self.data_dir, f"{sanitized_ticker}.json")
 
     def get_data(self, ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
         file_path = self._get_file_path(ticker)
