@@ -370,5 +370,4 @@ if __name__ == '__main__':
     if args.ticker:
         run_batch_mode(args.ticker)
     else:
-        debug_mode = os.environ.get('DASH_DEBUG', 'False').lower() == 'true'
-        app.run(debug=debug_mode, port=8050)
+        app.run(debug=False, port=8050)
