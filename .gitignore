@@ -14,3 +14,4 @@ venv.bak/
 
 # Streamlit
 .streamlit/
+.coverage
