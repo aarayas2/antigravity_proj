@@ -63,3 +63,43 @@ def test_bollinger_bands_empty_df():
 
     assert 'BBL_20_2.0_2.0' not in result_df.columns
     assert 'Signal' not in result_df.columns
+
+from strategy.BollingerBands import get_signals
+
+def test_bollinger_bands_get_signals_with_signals():
+    dates = pd.date_range(start="2023-01-01", periods=5)
+    df = pd.DataFrame({
+        'Close': [100.0, 105.0, 95.0, 110.0, 90.0],
+        'Signal': [0.0, -1.0, 1.0, -1.0, 1.0]
+    }, index=dates)
+
+    buy_signals, sell_signals = get_signals(df)
+
+    assert not buy_signals.empty
+    assert len(buy_signals) == 2
+    assert buy_signals.index[0] == dates[2]
+    assert buy_signals.index[1] == dates[4]
+
+    assert not sell_signals.empty
+    assert len(sell_signals) == 2
+    assert sell_signals.index[0] == dates[1]
+    assert sell_signals.index[1] == dates[3]
+
+def test_bollinger_bands_get_signals_no_signal_column():
+    dates = pd.date_range(start="2023-01-01", periods=3)
+    df = pd.DataFrame({
+        'Close': [100.0, 105.0, 95.0]
+    }, index=dates)
+
+    buy_signals, sell_signals = get_signals(df)
+
+    assert buy_signals.empty
+    assert sell_signals.empty
+
+def test_bollinger_bands_get_signals_empty_df():
+    df = pd.DataFrame()
+
+    buy_signals, sell_signals = get_signals(df)
+
+    assert buy_signals.empty
+    assert sell_signals.empty
