@@ -1,9 +1,6 @@
 import os
-import json
 import yfinance as yf
 import pandas as pd
-import pandas_ta as ta
-import numpy as np
 import datetime
 
 class StockDataCache:
