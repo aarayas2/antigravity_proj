@@ -1,5 +1,4 @@
 import pandas as pd
-import pandas_ta
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
