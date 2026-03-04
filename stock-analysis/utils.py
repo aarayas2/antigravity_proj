@@ -13,10 +13,12 @@ class StockDataCache:
             os.makedirs(self.data_dir)
 
     def _get_file_path(self, ticker: str) -> str:
-        # Sanitize ticker to prevent path traversal
+        # Sanitize ticker to prevent path traversal vulnerabilities
+        # Keep alphanumeric and specific symbols (., -, =, ^)
         sanitized_ticker = re.sub(r'[^a-zA-Z0-9.\-=^]', '', str(ticker))
-        # Ensure that no directory traversal can occur even with allowed characters
+        # Prevent traversal combinations (e.g. '..' or '../')
         sanitized_ticker = os.path.basename(sanitized_ticker)
+
         return os.path.join(self.data_dir, f"{sanitized_ticker}.json")
 
     def get_data(self, ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
