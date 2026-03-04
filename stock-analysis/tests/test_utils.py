@@ -9,6 +9,54 @@ from datetime import datetime
 from utils import calculate_metrics
 
 class TestCalculateMetrics(unittest.TestCase):
+    def test_empty_dataframe(self):
+        df = pd.DataFrame()
+        result = calculate_metrics(df, "dummy_strategy")
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Number of Trades'], 0)
+
+    def test_backtesting_loop_trades(self):
+        dates = pd.date_range('2023-01-01', periods=5)
+        # capital starts at 10000.0
+        # Buy on day 1 (price 100): buy 100 shares. Capital: 0.
+        # Sell on day 3 (price 150): sell 100 shares. Capital: 15000.
+        # Buy on day 4 (price 100): buy 150 shares. Capital: 0.
+        # Sell on day 5 (price 200): sell 150 shares. Capital: 30000.
+        df = pd.DataFrame({
+            'Close': [100, 120, 150, 100, 200],
+            'Position': [1.0, 0.0, -1.0, 1.0, -1.0]
+        }, index=dates)
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Number of Trades'], 2)
+        # Total return should be (30000 - 10000) / 10000 * 100 = 200%
+        self.assertEqual(result['Total Return'], '200.00%')
+        self.assertEqual(result['Win Rate'], '100.00%')
+
+        # trade 1 profit pct: (150-100)/100 = 50%
+        # trade 2 profit pct: (200-100)/100 = 100%
+        # avg = 75%
+        self.assertEqual(result['Average Return'], '75.00%')
+
+        trades = result['Trades History']
+        self.assertEqual(len(trades), 2)
+        self.assertEqual(trades[0]['entry_price'], 100)
+        self.assertEqual(trades[0]['exit_price'], 150)
+        self.assertEqual(trades[1]['entry_price'], 100)
+        self.assertEqual(trades[1]['exit_price'], 200)
+
+    def test_sell_without_position(self):
+        dates = pd.date_range('2023-01-01', periods=2)
+        df = pd.DataFrame({
+            'Close': [100, 150],
+            'Position': [-1.0, 0.0]  # Try to sell without buying
+        }, index=dates)
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Trades History'], [])
+
     def test_missing_position_column(self):
         df = pd.DataFrame({'Close': [100, 105, 110]})
         result = calculate_metrics(df, "dummy_strategy")
