@@ -103,3 +103,54 @@ def test_bollinger_bands_get_signals_empty_df():
 
     assert buy_signals.empty
     assert sell_signals.empty
+
+from strategy.BollingerBands import needs_subplots, add_traces
+from unittest.mock import MagicMock
+
+def test_needs_subplots():
+    assert needs_subplots() is False
+
+def test_add_traces_with_subplots():
+    fig = MagicMock()
+    df = pd.DataFrame({
+        'BBU_20_2.0_2.0': [100.0, 105.0],
+        'BBL_20_2.0_2.0': [90.0, 95.0],
+        'BBM_20_2.0_2.0': [95.0, 100.0]
+    }, index=pd.date_range(start="2023-01-01", periods=2))
+
+    add_traces(fig, df, main_row=1, sub_row=None)
+
+    assert fig.add_trace.call_count == 3
+
+    # Check that row=1, col=1 was passed in kwargs
+    for call in fig.add_trace.call_args_list:
+        _, kwargs = call
+        assert kwargs.get('row') == 1
+        assert kwargs.get('col') == 1
+
+def test_add_traces_no_subplots():
+    fig = MagicMock()
+    df = pd.DataFrame({
+        'BBU_20_2.0_2.0': [100.0, 105.0],
+        'BBL_20_2.0_2.0': [90.0, 95.0],
+        'BBM_20_2.0_2.0': [95.0, 100.0]
+    }, index=pd.date_range(start="2023-01-01", periods=2))
+
+    add_traces(fig, df, main_row=None, sub_row=None)
+
+    assert fig.add_trace.call_count == 3
+
+    # Check that row/col wasn't passed or is None
+    for call in fig.add_trace.call_args_list:
+        _, kwargs = call
+        assert kwargs.get('row') is None
+
+def test_add_traces_no_bbands():
+    fig = MagicMock()
+    df = pd.DataFrame({
+        'Close': [100.0, 105.0]
+    }, index=pd.date_range(start="2023-01-01", periods=2))
+
+    add_traces(fig, df, main_row=1, sub_row=None)
+
+    assert fig.add_trace.call_count == 0
