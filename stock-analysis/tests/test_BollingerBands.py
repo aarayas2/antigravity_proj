@@ -103,3 +103,18 @@ def test_bollinger_bands_get_signals_empty_df():
 
     assert buy_signals.empty
     assert sell_signals.empty
+
+def test_bollinger_bands_get_signals_assert_type():
+    dates = pd.date_range(start="2023-01-01", periods=3)
+    df = pd.DataFrame({
+        'Close': [100.0, 105.0, 95.0]
+    }, index=dates)
+
+    buy_signals, sell_signals = get_signals(df)
+
+    assert isinstance(buy_signals, pd.DataFrame)
+    assert isinstance(sell_signals, pd.DataFrame)
+
+    # Asserting the returned dataframes are indeed empty
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame())
+    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
