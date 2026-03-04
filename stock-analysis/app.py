@@ -188,4 +188,5 @@ def update_analysis(n_clicks, ticker, date_range, mru_data):
     return html.Div(output_sections), mru_data
 
 if __name__ == '__main__':
-    app.run(debug=True, port=8050)
+    debug_mode = os.environ.get('DASH_DEBUG', 'False').lower() == 'true'
+    app.run(debug=debug_mode, port=8050)
