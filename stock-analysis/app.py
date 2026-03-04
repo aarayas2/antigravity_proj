@@ -2,7 +2,6 @@ import dash
 from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
 import datetime
-import plotly.graph_objects as go
 import os
 from utils import load_data, apply_strategy, calculate_metrics
 from strategy import STRATEGIES
