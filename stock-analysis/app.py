@@ -13,8 +13,11 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STATS_FILE = os.path.join(DATA_DIR, "stats.json")
 stats_manager = StatsManager(JsonStatsStorage(STATS_FILE))
 
+import dash_bootstrap_components as dbc
+import pandas as pd
+
 # Dash App Initialization
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
+app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], suppress_callback_exceptions=True)
 server = app.server
 
 app.title = "Interactive Stock Analysis"
@@ -30,12 +33,29 @@ max_date_ord = max_date.toordinal()
 default_start_ord = default_start.toordinal()
 step_ord = 180 # ~6 months interval
 
-# Layout
-app.layout = dbc.Container([
+# --- Page 2 Layout ---
+page2_layout = html.Div([
+    html.H2("Strategy Statistics", className="mb-4"),
+    dbc.Row([
+        dbc.Col([
+            dbc.Label("Minimum Win Rate Filter (%)"),
+            dcc.Slider(
+                id='win-rate-slider',
+                min=0,
+                max=100,
+                step=5,
+                value=50,
+                marks={i: f'{i}%' for i in range(0, 101, 10)}
+            )
+        ], md=6)
+    ], className="mb-4"),
+    html.Div(id='stats-table-container')
+])
+
+# --- Page 1 Layout ---
+page1_layout = html.Div([
     dcc.Store(id='mru-store', storage_type='local', data=[]),
     html.Datalist(id='mru-tickers'),
-
-    html.H1("📈 Interactive Stock Strategy Analysis", className="mt-4 mb-4 text-center"),
     
     dbc.Row([
         dbc.Col([
@@ -77,7 +97,36 @@ app.layout = dbc.Container([
     dbc.Spinner(
         html.Div(id="output-container")
     )
+])
+
+# --- Main App Layout ---
+app.layout = dbc.Container([
+    dcc.Location(id='url', refresh=False),
+
+    dbc.NavbarSimple(
+        children=[
+            dbc.NavItem(dbc.NavLink("Analysis", href="/")),
+            dbc.NavItem(dbc.NavLink("Stats Table", href="/stats")),
+        ],
+        brand="📈 Interactive Stock Strategy Analysis",
+        brand_href="/",
+        color="primary",
+        dark=True,
+        className="mb-4",
+    ),
+
+    html.Div(id='page-content')
 ], fluid=True, className="p-4")
+
+@callback(
+    Output('page-content', 'children'),
+    Input('url', 'pathname')
+)
+def display_page(pathname):
+    if pathname == '/stats':
+        return page2_layout
+    else:
+        return page1_layout
 
 @callback(
     Output("date-range-label", "children"),
@@ -185,6 +234,53 @@ def update_analysis(n_clicks, ticker, date_range, mru_data):
         stats_manager.save_stats(ticker, date_begin_str, date_end_str, strategies_metrics)
 
     return html.Div(output_sections), mru_data
+
+@callback(
+    Output('stats-table-container', 'children'),
+    Input('win-rate-slider', 'value')
+)
+def update_stats_table(min_win_rate):
+    data = stats_manager._storage.read()
+
+    rows = []
+    for entry in data:
+        for ticker, stats in entry.items():
+            date_begin = stats.get('date-begin', 'N/A')
+            date_end = stats.get('date-end', 'N/A')
+
+            for strategy, metrics in stats.items():
+                if strategy in ['date-begin', 'date-end']:
+                    continue
+
+                win_rate_str = metrics.get('Win Rate', '0%')
+                try:
+                    win_rate_val = float(win_rate_str.strip('%'))
+                except ValueError:
+                    win_rate_val = 0.0
+
+                if win_rate_val > min_win_rate:
+                    rows.append({
+                        "Ticker": ticker,
+                        "Date Begin": date_begin,
+                        "Date End": date_end,
+                        "Strategy": strategy,
+                        "Total Return": metrics.get('Total Return', 'N/A'),
+                        "Average Return": metrics.get('Average Return', 'N/A'),
+                        "Number of Trades": metrics.get('Number of Trades', 'N/A'),
+                        "Win Rate": win_rate_str
+                    })
+
+    if not rows:
+        return dbc.Alert("No data available or no strategies meet the filter criteria.", color="info")
+
+    df = pd.DataFrame(rows)
+
+    table = dbc.Table.from_dataframe(
+        df, striped=True, bordered=True, hover=True, color="dark", responsive=True
+    )
+
+    return table
+
 
 if __name__ == '__main__':
     debug_mode = os.environ.get('DASH_DEBUG', 'False').lower() == 'true'

@@ -1,18 +1,22 @@
 /* Hide the numerical inputs associated with the RangeSlider 
    so they don't appear as weird white boxes when using ordinal dates */
-#date-range-slider .dash-input-container {
+#date-range-slider .dash-input-container,
+#win-rate-slider .dash-input-container {
     display: none !important;
 }
 
-#date-range-slider .dash-slider-wrapper {
+#date-range-slider .dash-slider-wrapper,
+#win-rate-slider .dash-slider-wrapper {
     margin-top: 10px; /* Adjust spacing to look cleaner without inputs */
 }
 
 /* Make the text labels below the slider visible on dark background */
-#date-range-slider .dash-slider-mark {
+#date-range-slider .dash-slider-mark,
+#win-rate-slider .dash-slider-mark {
     color: #f8f9fa !important;
 }
 
-#date-range-slider .rc-slider-mark-text {
+#date-range-slider .rc-slider-mark-text,
+#win-rate-slider .rc-slider-mark-text {
     white-space: nowrap;
 }
