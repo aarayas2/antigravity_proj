@@ -112,7 +112,7 @@ def load_data(ticker: str, start_date: datetime.date, end_date: datetime.date) -
     """Fetches historical stock data from Yahoo Finance, utilizing a local cache."""
     return _cache.get_data(ticker, start_date, end_date)
 
-from strategy import STRATEGIES
+from strategy import STRATEGIES  # noqa: E402
 
 def apply_strategy(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
     """Applies the selected trading strategy and calculates indicators."""
