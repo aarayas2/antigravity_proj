@@ -147,7 +147,11 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     active_df = df[df['Position'] != 0.0]
 
     # Extremely simplified backtest loop just for display metrics
-    for date, price, pos in zip(active_df.index, active_df['Close'], active_df['Position']):
+    dates = active_df.index
+    prices = active_df['Close'].to_numpy()
+    positions = active_df['Position'].to_numpy()
+
+    for date, price, pos in zip(dates, prices, positions):
         if pos == 1.0 and capital > price: # Buy
             shares_to_buy = capital // price
             position_size += shares_to_buy
