@@ -43,7 +43,24 @@ pytest stock-analysis/tests/test_persistence.py
 ```
 
 ## How to use
+
+### Web Interface
 1. **Ticker Selection:** In the main top control panel, type a valid symbol (e.g., `AAPL`, `MSFT`, `TSLA`) into the "Stock Ticker Symbol" field. The application remembers up to your last 20 searched tickers.
 2. **Strategy Selection:** Pick a strategy from the dropdown (SMA Crossover, Bollinger Bands, RSI, MACD).
 3. **Date Range:** Adjust the slider to set the boundaries for the backtest. By default, it covers the last 1 year.
 4. **Compute:** Click the "Compute Analysis" button. The app will fetch the data, process the strategy signals, and display the performance metrics alongside the interactive chart.
+
+### Batch Mode
+You can run the analysis from the command line without starting the web server. This is useful for pre-calculating statistics for one or more tickers.
+
+To run batch mode, provide the `--ticker` argument followed by a ticker or a semicolon-separated list of tickers:
+
+```bash
+# Run for a single ticker
+python app.py --ticker "MSFT"
+
+# Run for multiple tickers (processed concurrently)
+python app.py --ticker "MSFT;AAPL;GOOGL"
+```
+
+The batch mode will automatically use the maximum available date range (e.g., last 5 years up to today) and will save the computed statistics to `data/stats.json` for later viewing in the web interface.
