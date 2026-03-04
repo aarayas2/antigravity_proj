@@ -148,7 +148,7 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     trades_history = []
 
     # Store exit info before filtering
-    exit_price = df['Close'].iloc[-1]
+    exit_price = df['Close'].iat[-1]
     exit_date = df.index[-1]
 
     # Filter out rows with no position changes to avoid iterating through them
@@ -203,7 +203,7 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
 
     total_return = ((capital - initial_capital) / initial_capital) * 100
     win_rate = (winning_trades / trades * 100) if trades > 0 else 0
-    avg_return = sum([t['profit_pct'] for t in trades_history]) / len(trades_history) if trades_history else 0
+    avg_return = sum(t['profit_pct'] for t in trades_history) / len(trades_history) if trades_history else 0
     
     return {
         "Total Return": f"{total_return:.2f}%",
