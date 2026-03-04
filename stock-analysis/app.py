@@ -19,7 +19,7 @@ from pages.strategy_statistics import layout as strategy_statistics_layout
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], suppress_callback_exceptions=True)
 server = app.server
 
-app.title = "Interactive Stock Analysis"
+app.title = "Strategy Analysis"
 
 def run_batch_mode(tickers_str: str):
     """
@@ -73,7 +73,7 @@ app.layout = dbc.Container([
             dbc.NavItem(dbc.NavLink("Analysis", href="/")),
             dbc.NavItem(dbc.NavLink("Stats Table", href="/stats")),
         ],
-        brand="📈 Interactive Stock Strategy Analysis",
+        brand="📈 Stock Strategy Analysis",
         brand_href="/",
         color="primary",
         dark=True,
@@ -94,7 +94,7 @@ def display_page(pathname):
         return strategy_chart_layout
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Interactive Stock Analysis App")
+    parser = argparse.ArgumentParser(description="Stock Analysis App")
     parser.add_argument("--ticker", type=str, help="Run in batch mode for provided ticker(s), separated by semicolons (e.g., 'MSFT;AAPL')")
     args = parser.parse_args()
 
