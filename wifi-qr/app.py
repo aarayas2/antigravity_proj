@@ -1,5 +1,4 @@
 import streamlit as st
-import segno
 from segno import helpers
 import io
 import base64
