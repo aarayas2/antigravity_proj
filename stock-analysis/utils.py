@@ -19,7 +19,13 @@ class StockDataCache:
         # Prevent traversal combinations (e.g. '..' or '../')
         sanitized_ticker = os.path.basename(sanitized_ticker)
 
-        return os.path.join(self.data_dir, f"{sanitized_ticker}.json")
+        final_path = os.path.abspath(os.path.join(self.data_dir, f"{sanitized_ticker}.json"))
+
+        # Ensure the final path is strictly within the data_dir
+        if not final_path.startswith(os.path.abspath(self.data_dir)):
+            raise ValueError(f"Invalid ticker format: Potential path traversal detected for '{ticker}'.")
+
+        return final_path
 
     def get_data(self, ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
         file_path = self._get_file_path(ticker)
