@@ -1,10 +1,11 @@
 import pandas as pd
+import pandas_ta
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy()
     bbands = df.ta.bbands(length=20, std=2)
-    if bbands is not None:
+    if bbands is not None and not bbands.empty and 'BBL_20_2.0_2.0' in bbands.columns and 'BBU_20_2.0_2.0' in bbands.columns:
         df = pd.concat([df, bbands], axis=1)
         df['Signal'] = 0.0
         df.loc[df['Close'] < df['BBL_20_2.0_2.0'], 'Signal'] = 1.0
