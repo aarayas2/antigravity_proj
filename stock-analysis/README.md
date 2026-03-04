@@ -28,6 +28,20 @@ This is a Dash-based web application that allows users to interactively analyze 
    ```
 5. Open your web browser to the provided local URL (typically `http://localhost:8050`).
 
+## Testing
+
+To run the unit tests for this project, use `pytest` from the root directory:
+
+```bash
+pytest stock-analysis/
+```
+
+Individual tests can also be run specifically:
+
+```bash
+pytest stock-analysis/tests/test_persistence.py
+```
+
 ## How to use
 1. **Ticker Selection:** In the main top control panel, type a valid symbol (e.g., `AAPL`, `MSFT`, `TSLA`) into the "Stock Ticker Symbol" field. The application remembers up to your last 20 searched tickers.
 2. **Strategy Selection:** Pick a strategy from the dropdown (SMA Crossover, Bollinger Bands, RSI, MACD).
