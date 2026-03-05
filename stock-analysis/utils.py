@@ -186,7 +186,7 @@ def _compile_performance_metrics(initial_capital, final_capital, trades_history)
 
 def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     """Calculates basic performance metrics from the generated signals."""
-    if df.empty or 'Position' not in df.columns or df['Position'].abs().sum() == 0:
+    if df.empty or 'Position' not in df.columns or 'Close' not in df.columns or df['Position'].abs().sum() == 0:
         return {"Total Return": "0.00%", "Average Return": "0.00%", "Number of Trades": 0, "Win Rate": "0.00%", "Trades History": []}
 
     initial_capital = 10000.0
