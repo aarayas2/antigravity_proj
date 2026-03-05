@@ -295,3 +295,28 @@ class TestJsonStatsStorageRead:
         file_path.touch()
 
         assert storage.read() == []
+
+class TestJsonStatsStorageWrite:
+    """
+    Explicit test class to comprehensively test the JsonStatsStorage.write method
+    error handling and atomic replacement properties.
+    """
+    def test_write_json_dump_error(self, tmp_path):
+        file_path = tmp_path / "stats.json"
+        storage = JsonStatsStorage(str(file_path))
+
+        # Object that cannot be serialized by json.dump
+        class UnserializableObject:
+            pass
+
+        data = [{"TICKER": UnserializableObject()}]
+
+        with pytest.raises(TypeError):
+            storage.write(data)
+
+        # The temporary file should have been cleaned up after dump failure
+        temp_path = str(file_path) + '.tmp'
+        assert not os.path.exists(temp_path)
+
+        # Original file should be untouched and read validly (as [])
+        assert storage.read() == []
