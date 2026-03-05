@@ -61,6 +61,12 @@ def test_get_signals_with_signal_column():
         'Close': [10, 20, 30, 40],
         'Signal': [0.0, 1.0, -1.0, 1.0]
     })
+
+    # Cast Signal to float to prevent numpy type issues during testing
+    df['Signal'] = df['Signal'].astype(float)
+    # Ensure compatible Index
+    df.index = pd.Index([0, 1, 2, 3])
+
     buy_signals, sell_signals = get_signals(df)
 
     assert len(buy_signals) == 2, "Should find 2 buy signals (Signal == 1.0)."
@@ -68,6 +74,16 @@ def test_get_signals_with_signal_column():
 
     assert len(sell_signals) == 1, "Should find 1 sell signal (Signal == -1.0)."
     assert sell_signals.index.tolist() == [2], "Sell signal should match index 2."
+
+def test_missing_signal_column_returns_empty_dataframes():
+    """Passing a dataframe without the Signal column will return empty dataframes."""
+    df = pd.DataFrame({'Close': [10.0, 20.0, 30.0]})
+    buy_signals, sell_signals = get_signals(df)
+
+    assert isinstance(buy_signals, pd.DataFrame), "Buy signals should be a DataFrame."
+    assert isinstance(sell_signals, pd.DataFrame), "Sell signals should be a DataFrame."
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty if 'Signal' column is missing.")
+    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame(), obj="Sell signals should be empty if 'Signal' column is missing.")
 
 def test_get_signals_empty_df():
     """Test get_signals with an empty DataFrame."""
