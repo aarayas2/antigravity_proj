@@ -693,5 +693,69 @@ class TestLoadDataUtility(unittest.TestCase):
         # yfinance download shouldn't be called directly by the wrapper
         mock_download.assert_not_called()
 
+
+class TestLoadDataWrapperFunction(unittest.TestCase):
+    @patch('utils.StockDataCache.get_data')
+    @patch('yfinance.download')
+    def test_load_data_utility_function(self, mock_yf_download, mock_get_data):
+        """
+        Tests the load_data wrapper by explicitly mocking the underlying
+        StockDataCache and yfinance dependencies.
+        """
+        from utils import load_data
+
+        expected_df = pd.DataFrame({'Close': [100, 105]})
+        mock_get_data.return_value = expected_df
+
+        # load_data shouldn't call yfinance directly, but we mock it per requirements
+        mock_yf_download.return_value = pd.DataFrame()
+
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        result = load_data(ticker, start_date, end_date)
+
+        # Verify get_data was called correctly
+        mock_get_data.assert_called_once_with(ticker, start_date, end_date)
+
+        # Verify the returned DataFrame
+        pd.testing.assert_frame_equal(result, expected_df)
+
+        # Verify yfinance download was not called by the wrapper
+        mock_yf_download.assert_not_called()
+
+
+class TestStockDataCachePathTraversal(unittest.TestCase):
+    def test_get_file_path_traversal(self):
+        from utils import StockDataCache
+        cache = StockDataCache()
+
+        # We simulate a ticker that somehow gets past the regex but ends up with traversal.
+        # Actually the sanitized_ticker keeps alphanumeric and (., -, =, ^)
+        # So "...." or similar would become "...." and the final_path would be "/path/to/data/.....json"
+        # However, to explicitly hit the error on line 28, we need the final_path to NOT start with data_dir.
+        # This occurs if the sanitized_ticker is something like "../../etc/passwd"
+        # but the regex strips slashes. So how to hit line 28?
+
+        # The logic is:
+        # normalized_ticker = ticker.replace('\\', '/')
+        # sanitized_ticker = os.path.basename(normalized_ticker)
+        # sanitized_ticker = re.sub(r'[^a-zA-Z0-9.\-=^]', '', sanitized_ticker)
+        # final_path = os.path.abspath(os.path.join(self.data_dir, f"{sanitized_ticker}.json"))
+        # if not final_path.startswith(os.path.abspath(self.data_dir)): raise ValueError
+
+        # To get out of data_dir, sanitized_ticker must be something like "..", so final_path resolves up.
+        # Let's test with ticker = ".."
+        with self.assertRaisesRegex(ValueError, "Potential path traversal detected"):
+            # Because os.path.basename strips directory path, we must mock it or
+            # bypass it, but since we can't easily, we'll patch `os.path.abspath`
+            # to simulate the resolution returning a path outside data_dir.
+            with patch('os.path.abspath') as mock_abspath:
+                # We need the first call to os.path.abspath (in final_path = ...) to return an outside path,
+                # and the second call (in startswith(os.path.abspath...)) to return the data_dir.
+                mock_abspath.side_effect = ["/outside/path", "/correct/data/dir"]
+                cache._get_file_path("dummy")
+
 if __name__ == '__main__':
     unittest.main()
