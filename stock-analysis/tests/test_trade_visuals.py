@@ -257,5 +257,54 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("Entry Price: $100.00", trace.text)
         self.assertIn("Exit Price: N/A", trace.text)
 
+    def test_missing_essential_keys_combinations(self):
+        """Test explicitly missing essential keys like entry_date to ensure None is returned."""
+        # 1. Missing entry_date
+        trade1 = {
+            'exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0
+        }
+        self.assertIsNone(self.factory.create_trace(trade1))
+
+        # 2. Open trade missing fallback_exit_date
+        trade2 = {
+            'entry_date': self.dt_entry,
+            'exit_date': pd.NaT,
+            'entry_price': 100.0,
+            'exit_price': 110.0
+        }
+        self.assertIsNone(self.factory.create_trace(trade2))
+
+        # 3. Open trade with invalid fallback_exit_date (None)
+        trade3 = {
+            'entry_date': self.dt_entry,
+            'exit_date': pd.NaT,
+            'fallback_exit_date': None,
+            'entry_price': 100.0,
+            'exit_price': 110.0
+        }
+        self.assertIsNone(self.factory.create_trace(trade3))
+
+        # 4. Open trade with invalid fallback_exit_date (pd.NaT)
+        trade4 = {
+            'entry_date': self.dt_entry,
+            'exit_date': pd.NaT,
+            'fallback_exit_date': pd.NaT,
+            'entry_price': 100.0,
+            'exit_price': 110.0
+        }
+        self.assertIsNone(self.factory.create_trace(trade4))
+
+        # 5. Missing entry_date but has everything else
+        trade5 = {
+            'exit_date': self.dt_exit,
+            'fallback_exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        self.assertIsNone(self.factory.create_trace(trade5))
+
 if __name__ == '__main__':
     unittest.main()
