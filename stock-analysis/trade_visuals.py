@@ -60,7 +60,7 @@ class TradeTooltipFactory:
             entry_date = trade.get('entry_date')
             exit_date = trade.get('exit_date')
 
-            if entry_date is None:
+            if entry_date is None or pd.isna(entry_date):
                 return None  # Cannot plot without a start date
 
             # Handle open trades (no exit date yet)
