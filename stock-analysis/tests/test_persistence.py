@@ -405,3 +405,33 @@ class TestJsonStatsStorageWrite:
             with pytest.raises(Exception, match="Mocked error"):
                 storage.write(data)
         assert not os.path.exists(str(file_path) + '.tmp')
+
+class TestJsonStatsStorageReadAdditional:
+    def test_json_stats_storage_read_success(self, tmp_path):
+        file_path = tmp_path / "success.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"TICKER": {"date-begin": "2023-01-01"}}]
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+        assert storage.read() == data
+
+    def test_json_stats_storage_read_failure_decode(self, tmp_path):
+        file_path = tmp_path / "failure.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            f.write("{invalid json")
+        assert storage.read() == []
+
+    def test_json_stats_storage_read_file_not_exists(self, tmp_path):
+        file_path = tmp_path / "not_exists.json"
+        storage = JsonStatsStorage(str(file_path))
+        if os.path.exists(str(file_path)):
+            os.remove(str(file_path))
+        assert storage.read() == []
+
+    def test_json_stats_storage_read_not_a_list(self, tmp_path):
+        file_path = tmp_path / "not_list.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            json.dump({"not": "a list"}, f)
+        assert storage.read() == []
