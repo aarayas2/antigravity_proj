@@ -206,5 +206,25 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertEqual(trace.fillcolor, "rgba(255, 0, 0, 0.2)")
         self.assertEqual(trace.hoverlabel.bgcolor, "red")
 
+    def test_pd_nat_entry_date(self):
+        trade = {
+            'entry_date': pd.NaT,
+            'exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNone(trace)
+
+    def test_missing_keys_edge_cases(self):
+        # Trade missing both entry_date and exit_date
+        trace1 = self.factory.create_trace({'profit': 10.0})
+        self.assertIsNone(trace1)
+
+        # Trade with None exit_date but missing fallback_exit_date
+        trace2 = self.factory.create_trace({'entry_date': self.dt_entry, 'exit_date': None})
+        self.assertIsNone(trace2)
+
 if __name__ == '__main__':
     unittest.main()
