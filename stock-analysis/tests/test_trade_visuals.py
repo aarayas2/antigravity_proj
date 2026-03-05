@@ -368,5 +368,47 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIsNone(self.factory.create_trace({'fallback_exit_date': self.dt_exit}))
         self.assertIsNone(self.factory.create_trace({}))
 
+class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
+    """
+    Additional tests for explicit edge cases regarding missing keys, pd.NaT,
+    and np.nan, fulfilling specific strict review requirements without modifying
+    existing test classes.
+    """
+    def setUp(self):
+        self.factory = TradeTooltipFactory(y_min=0.0, y_max=100.0)
+
+    def test_missing_keys_explicit_coverage(self):
+        """Test missing keys to assert None is returned."""
+        trade_missing_all = {}
+        self.assertIsNone(self.factory.create_trace(trade_missing_all))
+
+        trade_missing_entry_date = {'exit_date': datetime(2023, 1, 2)}
+        self.assertIsNone(self.factory.create_trace(trade_missing_entry_date))
+
+    def test_pd_nat_handling(self):
+        """Test pd.NaT for dates explicitly."""
+        trade_nat_entry = {
+            'entry_date': pd.NaT,
+            'exit_date': datetime(2023, 1, 2),
+            'entry_price': 100.0,
+            'exit_price': 110.0
+        }
+        self.assertIsNone(self.factory.create_trace(trade_nat_entry))
+
+    def test_np_nan_handling(self):
+        """Test np.nan for prices explicitly."""
+        import numpy as np
+        trade_nan_prices = {
+            'entry_date': datetime(2023, 1, 1),
+            'exit_date': datetime(2023, 1, 2),
+            'entry_price': np.nan,
+            'exit_price': np.nan
+        }
+        trace = self.factory.create_trace(trade_nan_prices)
+        self.assertIsNotNone(trace)
+        self.assertIn("Entry Price: N/A", trace.text)
+        self.assertIn("Exit Price: N/A", trace.text)
+
+
 if __name__ == '__main__':
     unittest.main()
