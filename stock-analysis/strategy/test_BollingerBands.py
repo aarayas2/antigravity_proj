@@ -1,6 +1,49 @@
 import pytest
 import pandas as pd
-from strategy.BollingerBands import get_signals, apply_strategy
+import pandas_ta
+from unittest.mock import MagicMock
+from strategy.BollingerBands import get_signals, apply_strategy, needs_subplots, add_traces
+
+def test_needs_subplots():
+    """Test needs_subplots returns False."""
+    assert needs_subplots() is False
+
+def test_add_traces_no_bbu_column():
+    """Test add_traces does nothing when BBU column is missing."""
+    fig = MagicMock()
+    df = pd.DataFrame({'Close': [10, 20]})
+    add_traces(fig, df, main_row=1, sub_row=2)
+    fig.add_trace.assert_not_called()
+
+def test_add_traces_with_bbu_column_main_row():
+    """Test add_traces adds 3 traces to main_row when BBU column is present."""
+    fig = MagicMock()
+    df = pd.DataFrame({
+        'BBU_20_2.0_2.0': [12, 22],
+        'BBL_20_2.0_2.0': [8, 18],
+        'BBM_20_2.0_2.0': [10, 20]
+    })
+    add_traces(fig, df, main_row=1, sub_row=None)
+    assert fig.add_trace.call_count == 3
+    # Check that row=1, col=1 was passed to add_trace
+    for call in fig.add_trace.call_args_list:
+        assert call[1]['row'] == 1
+        assert call[1]['col'] == 1
+
+def test_add_traces_with_bbu_column_no_main_row():
+    """Test add_traces adds 3 traces without row/col kwargs when main_row is None."""
+    fig = MagicMock()
+    df = pd.DataFrame({
+        'BBU_20_2.0_2.0': [12, 22],
+        'BBL_20_2.0_2.0': [8, 18],
+        'BBM_20_2.0_2.0': [10, 20]
+    })
+    add_traces(fig, df, main_row=None, sub_row=None)
+    assert fig.add_trace.call_count == 3
+    # Check that row/col weren't passed
+    for call in fig.add_trace.call_args_list:
+        assert 'row' not in call[1]
+        assert 'col' not in call[1]
 
 def test_get_signals_no_signal_column():
     """Test get_signals when DataFrame does not have a 'Signal' column."""
@@ -9,8 +52,8 @@ def test_get_signals_no_signal_column():
 
     assert isinstance(buy_signals, pd.DataFrame), "Buy signals should be a DataFrame."
     assert isinstance(sell_signals, pd.DataFrame), "Sell signals should be a DataFrame."
-    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame())
-    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty if 'Signal' column is missing.")
+    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame(), obj="Sell signals should be empty if 'Signal' column is missing.")
 
 def test_get_signals_with_signal_column():
     """Test get_signals when DataFrame has a 'Signal' column."""
@@ -33,8 +76,22 @@ def test_get_signals_empty_df():
 
     assert isinstance(buy_signals, pd.DataFrame), "Buy signals should be a DataFrame."
     assert isinstance(sell_signals, pd.DataFrame), "Sell signals should be a DataFrame."
-    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame())
-    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty for an empty DataFrame.")
+    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame(), obj="Sell signals should be empty for an empty DataFrame.")
+
+def test_apply_strategy_with_mock_df():
+    """Apply pandas-ta indicators to a mock dataframe and assert output shape and signals."""
+    # Create a mock dataframe with > 20 rows to allow pandas_ta to compute actual indicators
+    df = pd.DataFrame({'Close': [10] * 19 + [5, 15]})
+    result = apply_strategy(df)
+
+    # Assert the output shape: 21 rows, 8 columns (Close, BBL, BBM, BBU, BBB, BBP, Signal, Position)
+    assert result.shape == (21, 8)
+
+    # Assert signals: row 19 (index 19) dropped to 5 -> Buy (1.0)
+    # row 20 (index 20) spiked to 15 -> Sell (-1.0)
+    assert result['Signal'].iloc[19] == 1.0
+    assert result['Signal'].iloc[20] == -1.0
 
 def test_apply_strategy_normal():
     """Test apply_strategy with sufficient data to calculate Bollinger Bands."""
