@@ -528,3 +528,15 @@ class TestJsonStatsStorageWriteError:
 
         temp_path = str(file_path) + '.tmp'
         assert not os.path.exists(temp_path)
+
+class TestJsonStatsStorageWriteErrorPath:
+    def test_write_os_replace_exception_removes_temp_file(self, tmp_path):
+        file_path = tmp_path / "stats.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"TICKER": {"date-begin": "2024-01-01"}}]
+
+        with patch("os.replace", side_effect=OSError("Failed to replace")):
+            with pytest.raises(OSError, match="Failed to replace"):
+                storage.write(data)
+
+        assert not os.path.exists(str(file_path) + ".tmp")
