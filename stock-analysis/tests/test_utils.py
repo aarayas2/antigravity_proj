@@ -608,6 +608,17 @@ class TestStockDataCache(unittest.TestCase):
         self.assertIsNone(result)
 
 class TestLoadDataWrapper(unittest.TestCase):
+    @patch('utils._cache.get_data')
+    def test_load_data_delegates_to_cache(self, mock_get_data):
+        from utils import load_data
+
+        expected_df = pd.DataFrame({'Close': [100.0, 105.0]})
+        mock_get_data.return_value = expected_df
+
+        ticker = "MSFT"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
     @patch('utils.yf.download')
     @patch('utils.StockDataCache.get_data')
     def test_load_data_wrapper_mocks(self, mock_get_data, mock_yf_download):
