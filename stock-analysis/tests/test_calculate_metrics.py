@@ -145,5 +145,41 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         # Total Return: (13300 - 10000) / 10000 = 33%
         self.assertEqual(result['Total Return'], '33.00%')
 
+
+    def test_calculate_metrics_buy_without_sell_then_close(self):
+        dates = pd.date_range('2023-01-01', periods=3)
+        # Buy @ 100, then hold, but no explicit sell. Closed out at exit_price.
+        df = pd.DataFrame({
+            'Close': [100.0, 110.0, 120.0],
+            'Position': [1.0, 0.0, 0.0]
+        }, index=dates)
+        result = calculate_metrics(df, 'dummy')
+        self.assertEqual(result['Number of Trades'], 1)
+        # Entry 100, Exit 120 => 20% return.
+
+    def test_calculate_metrics_fractional_shares_large_price(self):
+        dates = pd.date_range('2023-01-01', periods=3)
+        # Price is higher than capital, so shares_to_buy = 0
+        df = pd.DataFrame({
+            'Close': [20000.0, 21000.0, 22000.0],
+            'Position': [1.0, 0.0, -1.0]
+        }, index=dates)
+        result = calculate_metrics(df, 'dummy')
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Total Return'], '0.00%')
+
+    def test_calculate_metrics_multiple_trades_same_position(self):
+        dates = pd.date_range('2023-01-01', periods=4)
+        # Sequence of duplicate position signals
+        df = pd.DataFrame({
+            'Close': [100.0, 110.0, 120.0, 150.0],
+            'Position': [1.0, 1.0, -1.0, -1.0]
+        }, index=dates)
+        result = calculate_metrics(df, 'dummy')
+        self.assertEqual(result['Number of Trades'], 1)
+        # Entry 100, Exit 120 => 20% return. The second 1.0 is ignored since capital < price
+        # The second -1.0 is ignored since position_size = 0
+        self.assertEqual(result['Total Return'], '20.00%')
+
 if __name__ == '__main__':
     unittest.main()
