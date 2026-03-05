@@ -11,7 +11,7 @@ trade window visualizations.
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 import pandas as pd
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, Optional
 
 from strategy import STRATEGIES
 from trade_visuals import TradeTooltipFactory
@@ -36,18 +36,8 @@ class MockFig:
     def add_hline(self, **kwargs):
         self.fig.add_hline(**kwargs)
 
-def create_strategy_chart(df_with_signals: pd.DataFrame, strategy: str, metrics: Dict[str, Any]) -> go.Figure:
-    """
-    Generates a full Plotly Figure for a given strategy.
-
-    Args:
-        df_with_signals: The DataFrame containing price data and strategy signals.
-        strategy: The name of the strategy to plot.
-        metrics: The calculated metrics dictionary containing trades history.
-
-    Returns:
-        go.Figure: The fully configured Plotly chart.
-    """
+def _setup_figure(strategy: str) -> Tuple[go.Figure, Optional[int], Optional[int]]:
+    """Initializes the figure, deciding whether subplots are needed."""
     needs_subplots = False
     if strategy in STRATEGIES:
         needs_subplots = STRATEGIES[strategy]["needs_subplots"]()
@@ -62,12 +52,20 @@ def create_strategy_chart(df_with_signals: pd.DataFrame, strategy: str, metrics:
         sub_row = 2
     else:
         fig = go.Figure()
-        fig_wrapper = MockFig(fig)
-        fig = fig_wrapper.fig  # Overwrite for simplicity in charting later
         main_row = None
         sub_row = None
+    return fig, main_row, sub_row
 
-    # Draw trade duration windows with tooltips (must be drawn before candlesticks to appear underneath)
+def _add_traces(
+    fig: go.Figure,
+    df_with_signals: pd.DataFrame,
+    strategy: str,
+    metrics: Dict[str, Any],
+    main_row: Optional[int],
+    sub_row: Optional[int]
+) -> None:
+    """Adds all traces (trades, candlesticks, strategy lines, signals) to the figure."""
+    # Draw trade duration windows with tooltips
     trades_history = metrics.get("Trades History", [])
     if trades_history and not df_with_signals.empty:
         y_min = df_with_signals['Low'].min() * 0.95
@@ -128,7 +126,8 @@ def create_strategy_chart(df_with_signals: pd.DataFrame, strategy: str, metrics:
         else:
             fig.add_trace(trace)
 
-    # Layout updates
+def _update_layout(fig: go.Figure, main_row: Optional[int]) -> None:
+    """Updates figure layout and axes visibility."""
     fig.update_layout(
         height=700, template="plotly_dark",
         xaxis_rangeslider_visible=False,
@@ -137,5 +136,21 @@ def create_strategy_chart(df_with_signals: pd.DataFrame, strategy: str, metrics:
     if main_row:
          # Ensure rangeslider off for all subplots
          fig.update_xaxes(rangeslider_visible=False)
+
+def create_strategy_chart(df_with_signals: pd.DataFrame, strategy: str, metrics: Dict[str, Any]) -> go.Figure:
+    """
+    Generates a full Plotly Figure for a given strategy.
+
+    Args:
+        df_with_signals: The DataFrame containing price data and strategy signals.
+        strategy: The name of the strategy to plot.
+        metrics: The calculated metrics dictionary containing trades history.
+
+    Returns:
+        go.Figure: The fully configured Plotly chart.
+    """
+    fig, main_row, sub_row = _setup_figure(strategy)
+    _add_traces(fig, df_with_signals, strategy, metrics, main_row, sub_row)
+    _update_layout(fig, main_row)
 
     return fig
