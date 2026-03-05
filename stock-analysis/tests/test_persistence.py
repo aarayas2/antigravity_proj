@@ -497,3 +497,34 @@ class TestJsonStatsStorageReadMethod:
         file_path.touch()
 
         assert storage.read() == []
+
+class TestJsonStatsStorageWriteError:
+    """
+    Explicit test class to cover the error path for JsonStatsStorage write method.
+    """
+    def test_write_os_replace_exception_cleanup(self, tmp_path):
+        file_path = tmp_path / "test_write.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"TICKER": {"date-begin": "2023-01-01"}}]
+
+        with patch('os.replace', side_effect=OSError("Mocked error")):
+            with pytest.raises(OSError, match="Mocked error"):
+                storage.write(data)
+
+        temp_path = str(file_path) + '.tmp'
+        assert not os.path.exists(temp_path)
+
+    def test_write_json_dump_exception_cleanup(self, tmp_path):
+        file_path = tmp_path / "test_write.json"
+        storage = JsonStatsStorage(str(file_path))
+
+        class Unserializable:
+            pass
+
+        data = [{"TICKER": Unserializable()}]
+
+        with pytest.raises(TypeError):
+            storage.write(data)
+
+        temp_path = str(file_path) + '.tmp'
+        assert not os.path.exists(temp_path)
