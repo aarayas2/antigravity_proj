@@ -130,22 +130,66 @@ def apply_strategy(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
         return STRATEGIES[strategy]["apply_strategy"](df)
     return df
 
+def _create_trade_record(entry_date, exit_date, entry_price, exit_price):
+    return {
+        'entry_date': entry_date,
+        'exit_date': exit_date,
+        'entry_price': entry_price,
+        'exit_price': exit_price,
+        'profit': exit_price - entry_price,
+        'profit_pct': (exit_price - entry_price) / entry_price * 100 if entry_price > 0 else 0
+    }
+
+def _evaluate_trade_sequence(dates, prices, positions, initial_capital, exit_date, exit_price):
+    capital = initial_capital
+    position_size = 0
+    buy_price = 0
+    buy_date = None
+    trades_history = []
+
+    for date, price, pos in zip(dates, prices, positions):
+        if pos == 1.0 and capital > price: # Buy
+            shares_to_buy = capital // price
+            position_size += shares_to_buy
+            capital -= shares_to_buy * price
+            buy_price = price
+            buy_date = date
+        elif pos == -1.0 and position_size > 0: # Sell
+            capital += position_size * price
+            trades_history.append(_create_trade_record(buy_date, date, buy_price, price))
+            position_size = 0
+            buy_price = 0
+            buy_date = None
+
+    # Close out open position at the end
+    if position_size > 0:
+        capital += position_size * exit_price
+        trades_history.append(_create_trade_record(buy_date, exit_date, buy_price, exit_price))
+
+    return capital, trades_history
+
+def _compile_performance_metrics(initial_capital, final_capital, trades_history):
+    trades = len(trades_history)
+    winning_trades = sum(1 for t in trades_history if t['profit'] > 0)
+
+    total_return = ((final_capital - initial_capital) / initial_capital) * 100
+    win_rate = (winning_trades / trades * 100) if trades > 0 else 0
+    avg_return = sum(t['profit_pct'] for t in trades_history) / trades if trades > 0 else 0
+    
+    return {
+        "Total Return": f"{total_return:.2f}%",
+        "Average Return": f"{avg_return:.2f}%",
+        "Number of Trades": trades,
+        "Win Rate": f"{win_rate:.2f}%",
+        "Trades History": trades_history
+    }
+
 def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     """Calculates basic performance metrics from the generated signals."""
     if df.empty or 'Position' not in df.columns or df['Position'].abs().sum() == 0:
         return {"Total Return": "0.00%", "Average Return": "0.00%", "Number of Trades": 0, "Win Rate": "0.00%", "Trades History": []}
 
     initial_capital = 10000.0
-    capital = initial_capital
-    position_size = 0 # Number of shares held
-    
-    trades = 0
-    winning_trades = 0
-    
-    buy_price = 0
-    buy_date = None
-    
-    trades_history = []
 
     # Store exit info before filtering
     exit_price = df['Close'].iat[-1]
@@ -159,59 +203,11 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     prices = active_df['Close'].to_numpy()
     positions = active_df['Position'].to_numpy()
 
-    for date, price, pos in zip(dates, prices, positions):
-        if pos == 1.0 and capital > price: # Buy
-            shares_to_buy = capital // price
-            position_size += shares_to_buy
-            capital -= shares_to_buy * price
-            buy_price = price
-            buy_date = date
-        elif pos == -1.0 and position_size > 0: # Sell
-            capital += position_size * price
-            
-            trades += 1
-            if price > buy_price:
-                 winning_trades += 1
-                 
-            trades_history.append({
-                'entry_date': buy_date,
-                'exit_date': date,
-                'entry_price': buy_price,
-                'exit_price': price,
-                'profit': price - buy_price,
-                'profit_pct': (price - buy_price) / buy_price * 100 if buy_price > 0 else 0
-            })
-            
-            position_size = 0
-            buy_price = 0
-            buy_date = None
+    final_capital, trades_history = _evaluate_trade_sequence(
+        dates, prices, positions, initial_capital, exit_date, exit_price
+    )
 
-    # Close out open position at the end
-    if position_size > 0:
-         capital += position_size * exit_price
-         trades += 1
-         if exit_price > buy_price:
-             winning_trades += 1
-         trades_history.append({
-             'entry_date': buy_date,
-             'exit_date': exit_date,
-             'entry_price': buy_price,
-             'exit_price': exit_price,
-             'profit': exit_price - buy_price,
-             'profit_pct': (exit_price - buy_price) / buy_price * 100 if buy_price > 0 else 0
-         })
-
-    total_return = ((capital - initial_capital) / initial_capital) * 100
-    win_rate = (winning_trades / trades * 100) if trades > 0 else 0
-    avg_return = sum(t['profit_pct'] for t in trades_history) / len(trades_history) if trades_history else 0
-    
-    return {
-        "Total Return": f"{total_return:.2f}%",
-        "Average Return": f"{avg_return:.2f}%",
-        "Number of Trades": trades,
-        "Win Rate": f"{win_rate:.2f}%",
-        "Trades History": trades_history
-    }
+    return _compile_performance_metrics(initial_capital, final_capital, trades_history)
 
 from persistence import StatsManager, JsonStatsStorage
 
