@@ -3,6 +3,7 @@ import os
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import unittest
+from unittest.mock import Mock
 import pandas as pd
 from datetime import datetime
 
@@ -84,6 +85,51 @@ class TestTradeTooltipFactory(unittest.TestCase):
         trade = ["not", "a", "dict"] # Will cause AttributeError when get() is called
         trace = self.factory.create_trace(trade)
         self.assertIsNone(trace)
+
+    def test_entry_date_exception(self):
+        mock_date = Mock()
+        mock_date.strftime.side_effect = Exception("Date formatting error")
+
+        trade = {
+            'entry_date': mock_date,
+            'exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("Start: Unknown", trace.text)
+
+    def test_exit_date_exception(self):
+        mock_date = Mock()
+        mock_date.strftime.side_effect = Exception("Date formatting error")
+
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': mock_date,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("End: Unknown", trace.text)
+
+    def test_open_trade_with_fallback_date(self):
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': None,
+            'fallback_exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertEqual(trace.fillcolor, "rgba(128, 128, 128, 0.2)") # open trade color
+        self.assertIn("End: Open", trace.text)
+        self.assertEqual(trace.hoverlabel.bgcolor, "gray")
 
 if __name__ == '__main__':
     unittest.main()

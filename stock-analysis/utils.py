@@ -148,7 +148,7 @@ def _evaluate_trade_sequence(dates, prices, positions, initial_capital, exit_dat
     trades_history = []
 
     for date, price, pos in zip(dates, prices, positions):
-        if pos == 1.0 and capital > price: # Buy
+        if pos == 1.0 and capital > price and price > 0: # Buy
             shares_to_buy = capital // price
             position_size += shares_to_buy
             capital -= shares_to_buy * price
