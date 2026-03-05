@@ -226,5 +226,36 @@ class TestTradeTooltipFactory(unittest.TestCase):
         trace2 = self.factory.create_trace({'entry_date': self.dt_entry, 'exit_date': None})
         self.assertIsNone(trace2)
 
+    def test_missing_random_keys(self):
+        """Test with a dictionary that has completely unrelated keys but misses the required ones."""
+        trace = self.factory.create_trace({'random_key': 'value', 'another_key': 123})
+        self.assertIsNone(trace)
+
+    def test_missing_entry_price_with_exit_price(self):
+        """Test when entry_price is explicitly missing but exit_price is present."""
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': self.dt_exit,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("Entry Price: N/A", trace.text)
+        self.assertIn("Exit Price: $110.00", trace.text)
+
+    def test_missing_exit_price_with_entry_price(self):
+        """Test when exit_price is explicitly missing but entry_price is present."""
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("Entry Price: $100.00", trace.text)
+        self.assertIn("Exit Price: N/A", trace.text)
+
 if __name__ == '__main__':
     unittest.main()
