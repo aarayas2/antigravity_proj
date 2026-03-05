@@ -14,10 +14,12 @@ class StockDataCache:
 
     def _get_file_path(self, ticker: str) -> str:
         # Sanitize ticker to prevent path traversal vulnerabilities
-        # Keep alphanumeric and specific symbols (., -, =, ^)
-        sanitized_ticker = re.sub(r'[^a-zA-Z0-9.\-=^]', '', str(ticker))
+        # Ensure cross-platform path handling for os.path.basename by normalizing backslashes
+        normalized_ticker = str(ticker).replace('\\', '/')
         # Prevent traversal combinations (e.g. '..' or '../')
-        sanitized_ticker = os.path.basename(sanitized_ticker)
+        sanitized_ticker = os.path.basename(normalized_ticker)
+        # Keep alphanumeric and specific symbols (., -, =, ^)
+        sanitized_ticker = re.sub(r'[^a-zA-Z0-9.\-=^]', '', sanitized_ticker)
 
         final_path = os.path.abspath(os.path.join(self.data_dir, f"{sanitized_ticker}.json"))
 
@@ -198,9 +200,19 @@ def _compile_performance_metrics(initial_capital, final_capital, trades_history)
         "Trades History": trades_history
     }
 
+def _has_valid_signals(df: pd.DataFrame) -> bool:
+    """Checks if the dataframe contains valid signals for backtesting."""
+    if df.empty:
+        return False
+    if 'Position' not in df.columns or 'Close' not in df.columns:
+        return False
+    if df['Position'].abs().sum() == 0:
+        return False
+    return True
+
 def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     """Calculates basic performance metrics from the generated signals."""
-    if df.empty or 'Position' not in df.columns or 'Close' not in df.columns or df['Position'].abs().sum() == 0:
+    if not _has_valid_signals(df):
         return {"Total Return": "0.00%", "Average Return": "0.00%", "Number of Trades": 0, "Win Rate": "0.00%", "Trades History": []}
 
     initial_capital = 10000.0
