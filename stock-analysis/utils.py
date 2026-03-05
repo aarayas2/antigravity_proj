@@ -14,10 +14,12 @@ class StockDataCache:
 
     def _get_file_path(self, ticker: str) -> str:
         # Sanitize ticker to prevent path traversal vulnerabilities
-        # Keep alphanumeric and specific symbols (., -, =, ^)
-        sanitized_ticker = re.sub(r'[^a-zA-Z0-9.\-=^]', '', str(ticker))
+        # Ensure cross-platform path handling for os.path.basename by normalizing backslashes
+        normalized_ticker = str(ticker).replace('\\', '/')
         # Prevent traversal combinations (e.g. '..' or '../')
-        sanitized_ticker = os.path.basename(sanitized_ticker)
+        sanitized_ticker = os.path.basename(normalized_ticker)
+        # Keep alphanumeric and specific symbols (., -, =, ^)
+        sanitized_ticker = re.sub(r'[^a-zA-Z0-9.\-=^]', '', sanitized_ticker)
 
         final_path = os.path.abspath(os.path.join(self.data_dir, f"{sanitized_ticker}.json"))
 

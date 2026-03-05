@@ -13,10 +13,10 @@ def test_ticker_sanitization():
 
     # Path traversal attempts
     path1 = os.path.basename(cache._get_file_path("../../../etc/passwd"))
-    assert path1 == "......etcpasswd.json"
+    assert path1 == "passwd.json"
 
     path2 = os.path.basename(cache._get_file_path("..\\..\\windows\\system32"))
-    assert path2 == "....windowssystem32.json"
+    assert path2 == "system32.json"
 
     print("All tests passed!")
 
