@@ -15,6 +15,13 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
+    def test_calculate_metrics_no_close_column(self):
+        df = pd.DataFrame({'Position': [1.0, 1.0]})
+        result = calculate_metrics(df, 'dummy')
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Trades History'], [])
+
     def test_calculate_metrics_empty_dataframe(self):
         df = pd.DataFrame()
         result = calculate_metrics(df, 'dummy')
@@ -180,6 +187,29 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         # Entry 100, Exit 120 => 20% return. The second 1.0 is ignored since capital < price
         # The second -1.0 is ignored since position_size = 0
         self.assertEqual(result['Total Return'], '20.00%')
+
+    def test_calculate_metrics_buy_hold_scenario(self):
+        """
+        Tests backtesting loop logic for a simple buy and hold scenario,
+        to ensure Total Return and Number of Trades are calculated correctly
+        even when the trade is open at the end.
+        """
+        dates = pd.date_range('2024-01-01', periods=4)
+        # Day 1: Buy @ 100 -> 100 shares, capital drops from 10000 to 0
+        # Day 2: Hold @ 120
+        # Day 3: Hold @ 130
+        # Day 4: Hold @ 150 -> position open, exit_price = 150
+        df = pd.DataFrame({
+            'Close': [100.0, 120.0, 130.0, 150.0],
+            'Position': [1.0, 0.0, 0.0, 0.0]
+        }, index=dates)
+
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Number of Trades'], 1)
+        self.assertEqual(result['Total Return'], '50.00%')
+        self.assertEqual(result['Win Rate'], '100.00%')
+        self.assertEqual(result['Average Return'], '50.00%')
 
 if __name__ == '__main__':
     unittest.main()
