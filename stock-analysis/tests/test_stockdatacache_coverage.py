@@ -19,10 +19,13 @@ class TestStockDataCacheCoverage(unittest.TestCase):
         # Since the _get_file_path uses real `os.path.abspath`, it's hard to trigger path traversal
         # using standard string manipulations since `os.path.basename` strips off the slashes.
         # So we mock os.path.basename to allow a traversal string like '../escaped' to pass.
+        # Also mock re.sub to not strip the dots and slashes we just added
         with patch('os.path.basename') as mock_basename:
-            mock_basename.return_value = '../escaped'
-            with self.assertRaises(ValueError):
-                self.cache._get_file_path("dummy")
+            with patch('re.sub') as mock_re_sub:
+                mock_basename.return_value = '../escaped'
+                mock_re_sub.return_value = '../escaped'
+                with self.assertRaises(ValueError):
+                    self.cache._get_file_path("dummy")
 
     @patch('os.path.exists')
     @patch('pandas.read_json')
