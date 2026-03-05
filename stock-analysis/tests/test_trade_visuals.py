@@ -131,5 +131,15 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("End: Open", trace.text)
         self.assertEqual(trace.hoverlabel.bgcolor, "gray")
 
+    def test_empty_trade_dict(self):
+        """Test with an empty dictionary, which lacks 'entry_date' and should return None."""
+        trace = self.factory.create_trace({})
+        self.assertIsNone(trace)
+
+    def test_none_trade(self):
+        """Test with None, which should raise an exception caught internally, returning None."""
+        trace = self.factory.create_trace(None)
+        self.assertIsNone(trace)
+
 if __name__ == '__main__':
     unittest.main()
