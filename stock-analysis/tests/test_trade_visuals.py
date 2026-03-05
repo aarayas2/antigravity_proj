@@ -306,5 +306,67 @@ class TestTradeTooltipFactory(unittest.TestCase):
         }
         self.assertIsNone(self.factory.create_trace(trade5))
 
+    def test_missing_keys_exhaustively(self):
+        """Test exhaustive combinations of missing key scenarios."""
+        # Baseline valid trade
+        valid_trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+
+        # Test passing dictionaries with missing keys to assert None or valid fallback
+
+        # Missing only entry_date - Should return None
+        trade_no_entry_date = valid_trade.copy()
+        del trade_no_entry_date['entry_date']
+        self.assertIsNone(self.factory.create_trace(trade_no_entry_date))
+
+        # Missing only exit_date (and no fallback) - Should return None because it's an open trade without a fallback
+        trade_no_exit_date = valid_trade.copy()
+        del trade_no_exit_date['exit_date']
+        self.assertIsNone(self.factory.create_trace(trade_no_exit_date))
+
+        # Missing exit_date but has fallback_exit_date - Should handle it as an open trade
+        trade_no_exit_date_with_fallback = valid_trade.copy()
+        del trade_no_exit_date_with_fallback['exit_date']
+        trade_no_exit_date_with_fallback['fallback_exit_date'] = self.dt_exit
+        trace_open = self.factory.create_trace(trade_no_exit_date_with_fallback)
+        self.assertIsNotNone(trace_open)
+        self.assertIn("End: Open", trace_open.text)
+
+        # Missing entry_price - Should format as N/A
+        trade_no_entry_price = valid_trade.copy()
+        del trade_no_entry_price['entry_price']
+        trace_no_entry_price = self.factory.create_trace(trade_no_entry_price)
+        self.assertIsNotNone(trace_no_entry_price)
+        self.assertIn("Entry Price: N/A", trace_no_entry_price.text)
+
+        # Missing exit_price - Should format as N/A
+        trade_no_exit_price = valid_trade.copy()
+        del trade_no_exit_price['exit_price']
+        trace_no_exit_price = self.factory.create_trace(trade_no_exit_price)
+        self.assertIsNotNone(trace_no_exit_price)
+        self.assertIn("Exit Price: N/A", trace_no_exit_price.text)
+
+        # Missing all price keys and profit
+        trade_only_dates = {
+            'entry_date': self.dt_entry,
+            'exit_date': self.dt_exit
+        }
+        trace_only_dates = self.factory.create_trace(trade_only_dates)
+        self.assertIsNotNone(trace_only_dates)
+        self.assertIn("Entry Price: N/A", trace_only_dates.text)
+        self.assertIn("Exit Price: N/A", trace_only_dates.text)
+
+    def test_missing_keys_return_none_cases(self):
+        """Test completely missing keys that result in None trace."""
+        self.assertIsNone(self.factory.create_trace({'exit_date': self.dt_exit}))
+        self.assertIsNone(self.factory.create_trace({'entry_price': 100.0, 'exit_price': 110.0}))
+        self.assertIsNone(self.factory.create_trace({'fallback_exit_date': self.dt_exit}))
+        self.assertIsNone(self.factory.create_trace({}))
+
 if __name__ == '__main__':
     unittest.main()
