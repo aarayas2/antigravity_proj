@@ -212,3 +212,24 @@ def test_write_error_path(tmp_path):
         # Verify that temp file was removed
         temp_path = str(file_path) + '.tmp'
         assert not os.path.exists(temp_path)
+
+def test_stats_manager_save_stats_existing_ticker_different_entry_idx(tmp_path):
+    # Test branch where ticker is NOT in the first entry, covering 82->81
+    StatsManager._instance = None
+    file_path = tmp_path / "stats.json"
+    storage = JsonStatsStorage(str(file_path))
+    manager = StatsManager(storage)
+
+    # Initial save for MSFT
+    manager.save_stats("MSFT", "2023-01-01", "2023-12-31", {"SMA": {"profit": 50}})
+    # Save for AAPL (second entry)
+    manager.save_stats("AAPL", "2023-01-01", "2023-12-31", {"SMA": {"profit": 100}})
+
+    # Update AAPL (which is the second entry in data, so idx=0 loop will have AAPL in entry == False)
+    manager.save_stats("AAPL", "2023-01-01", "2024-01-01", {"SMA": {"profit": 200}})
+
+    data = storage.read()
+    assert len(data) == 2
+    assert "MSFT" in data[0]
+    assert "AAPL" in data[1]
+    assert data[1]["AAPL"]["SMA"]["profit"] == 200
