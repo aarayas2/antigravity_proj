@@ -435,3 +435,65 @@ class TestJsonStatsStorageReadAdditional:
         with open(file_path, "w") as f:
             json.dump({"not": "a list"}, f)
         assert storage.read() == []
+
+class TestJsonStatsStorageReadMethod:
+    """
+    Explicit test class to comprehensively test the JsonStatsStorage.read method
+    as requested: asserting empty lists are returned on failure and valid data
+    is returned on success, using mocked open() or temporary directories.
+    """
+
+    def test_read_success_valid_data(self, tmp_path):
+        file_path = tmp_path / "valid.json"
+        storage = JsonStatsStorage(str(file_path))
+        valid_data = [{"AAPL": {"date-begin": "2023-01-01"}}]
+
+        with open(file_path, 'w') as f:
+            json.dump(valid_data, f)
+
+        assert storage.read() == valid_data
+
+    def test_read_failure_file_not_exists(self, tmp_path):
+        file_path = tmp_path / "not_exists.json"
+        storage = JsonStatsStorage(str(file_path))
+        # Ensure it's deleted after init
+        if os.path.exists(str(file_path)):
+            os.remove(str(file_path))
+
+        assert storage.read() == []
+
+    def test_read_failure_malformed_json(self, tmp_path):
+        file_path = tmp_path / "malformed.json"
+        storage = JsonStatsStorage(str(file_path))
+
+        with open(file_path, 'w') as f:
+            f.write("{ invalid_json }")
+
+        assert storage.read() == []
+
+    def test_read_failure_not_a_list(self, tmp_path):
+        file_path = tmp_path / "not_list.json"
+        storage = JsonStatsStorage(str(file_path))
+
+        with open(file_path, 'w') as f:
+            json.dump({"not": "a list"}, f)
+
+        assert storage.read() == []
+
+    @patch("builtins.open", new_callable=mock_open, read_data="[{\"AAPL\": {}}]")
+    def test_read_success_mocked(self, mock_file, tmp_path):
+        file_path = tmp_path / "mocked_success.json"
+        storage = JsonStatsStorage(str(file_path))
+
+        # Touch the file so os.path.exists passes in read()
+        file_path.touch()
+
+        assert storage.read() == [{"AAPL": {}}]
+
+    @patch("builtins.open", new_callable=mock_open, read_data="{ bad json")
+    def test_read_failure_mocked_decode_error(self, mock_file, tmp_path):
+        file_path = tmp_path / "mocked_fail.json"
+        storage = JsonStatsStorage(str(file_path))
+        file_path.touch()
+
+        assert storage.read() == []
