@@ -228,5 +228,22 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
+    def test_calculate_metrics_invalid_position_value(self):
+        """
+        Tests backtesting loop when there are unknown non-zero positions like 0.5.
+        The function should simply ignore these invalid signals and not crash.
+        """
+        dates = pd.date_range('2024-01-01', periods=3)
+        df = pd.DataFrame({
+            'Close': [100.0, 105.0, 110.0],
+            'Position': [0.5, -0.5, 2.0]
+        }, index=dates)
+
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Trades History'], [])
+
 if __name__ == '__main__':
     unittest.main()
