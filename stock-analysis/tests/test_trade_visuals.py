@@ -141,5 +141,70 @@ class TestTradeTooltipFactory(unittest.TestCase):
         trace = self.factory.create_trace(None)
         self.assertIsNone(trace)
 
+    def test_open_trade_pd_isna_exit_date_valid_fallback(self):
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': pd.NaT,
+            'fallback_exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("End: Open", trace.text)
+
+    def test_open_trade_pd_isna_exit_date_invalid_fallback(self):
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': pd.NaT,
+            'fallback_exit_date': pd.NaT,
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNone(trace)
+
+    def test_pd_isna_prices(self):
+        import numpy as np
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': self.dt_exit,
+            'entry_price': np.nan,
+            'exit_price': np.nan,
+            'profit': 0.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("Entry Price: N/A", trace.text)
+        self.assertIn("Exit Price: N/A", trace.text)
+
+    def test_string_dates_no_strftime(self):
+        trade = {
+            'entry_date': '2023-01-01',
+            'exit_date': '2023-01-10',
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("Start: 2023-01-01", trace.text)
+        self.assertIn("End: 2023-01-10", trace.text)
+
+    def test_missing_profit_key(self):
+        trade = {
+            'entry_date': self.dt_entry,
+            'exit_date': self.dt_exit,
+            'entry_price': 100.0,
+            'exit_price': 110.0
+        }
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        # Defaults to profit 0, which corresponds to red (profit <= 0)
+        self.assertEqual(trace.fillcolor, "rgba(255, 0, 0, 0.2)")
+        self.assertEqual(trace.hoverlabel.bgcolor, "red")
+
 if __name__ == '__main__':
     unittest.main()
