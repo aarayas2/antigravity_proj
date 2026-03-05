@@ -540,3 +540,58 @@ class TestJsonStatsStorageWriteErrorPath:
                 storage.write(data)
 
         assert not os.path.exists(str(file_path) + ".tmp")
+
+class TestJsonStatsStorageReadFinal:
+    """
+    Final test class to assert empty lists are returned on failure and valid data
+    is returned on success for JsonStatsStorage.read method.
+    """
+    def test_read_returns_valid_data_on_success(self, tmp_path):
+        file_path = tmp_path / "valid_data.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"AAPL": {"profit": 100}}]
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+
+        assert storage.read() == data
+
+    def test_read_returns_empty_list_on_file_not_found(self, tmp_path):
+        file_path = tmp_path / "missing_file.json"
+        storage = JsonStatsStorage(str(file_path))
+        if os.path.exists(str(file_path)):
+            os.remove(str(file_path))
+
+        assert storage.read() == []
+
+    def test_read_returns_empty_list_on_invalid_json(self, tmp_path):
+        file_path = tmp_path / "invalid_json.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            f.write("{invalid json")
+
+        assert storage.read() == []
+
+    def test_read_returns_empty_list_on_non_list_data(self, tmp_path):
+        file_path = tmp_path / "non_list.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = {"AAPL": {"profit": 100}}
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+
+        assert storage.read() == []
+
+    @patch("builtins.open", new_callable=mock_open, read_data='[{"MSFT": {"profit": 50}}]')
+    def test_read_returns_valid_data_on_success_mocked(self, mock_file, tmp_path):
+        file_path = tmp_path / "mock_valid_data.json"
+        storage = JsonStatsStorage(str(file_path))
+        file_path.touch()
+
+        assert storage.read() == [{"MSFT": {"profit": 50}}]
+
+    @patch("builtins.open", new_callable=mock_open, read_data="{invalid json")
+    def test_read_returns_empty_list_on_invalid_json_mocked(self, mock_file, tmp_path):
+        file_path = tmp_path / "mock_invalid_json.json"
+        storage = JsonStatsStorage(str(file_path))
+        file_path.touch()
+
+        assert storage.read() == []
