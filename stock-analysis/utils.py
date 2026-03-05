@@ -33,6 +33,10 @@ class StockDataCache:
         print(f"Cache miss for {ticker}. Downloading full data from {start_date} to {end_date}.")
         return self._download_and_save_full(ticker, start_date, end_date, file_path)
 
+    def _handle_cache_hit(self, ticker: str, cached_df: pd.DataFrame) -> pd.DataFrame:
+        print(f"Cache hit for {ticker}. All requested data available locally.")
+        return cached_df
+
     def _handle_partial_hit(self, ticker: str, start_date: datetime.date, end_date: datetime.date, cached_df: pd.DataFrame, file_path: str) -> pd.DataFrame:
         first_cached_date = cached_df.index.min().date()
         last_cached_date = cached_df.index.max().date()
@@ -44,7 +48,7 @@ class StockDataCache:
         if start_date < first_cached_date:
             fetch_end_old = first_cached_date - datetime.timedelta(days=1)
             if start_date <= fetch_end_old:
-                print(f"Cache hit for {ticker}. Fetching older data from {start_date} to {fetch_end_old}.")
+                print(f"Partial hit for {ticker}. Fetching older data from {start_date} to {fetch_end_old}.")
                 older_data = self._download_from_yf(ticker, start_date, fetch_end_old + datetime.timedelta(days=1))
                 if older_data is not None and not older_data.empty:
                     dfs_to_concat.append(older_data)
@@ -54,7 +58,7 @@ class StockDataCache:
         if end_date > last_cached_date:
             fetch_start_new = last_cached_date + datetime.timedelta(days=1)
             if fetch_start_new <= end_date:
-                print(f"Cache hit for {ticker}. Fetching newer data from {fetch_start_new} to {end_date}.")
+                print(f"Partial hit for {ticker}. Fetching newer data from {fetch_start_new} to {end_date}.")
                 newer_data = self._download_from_yf(ticker, fetch_start_new, end_date + datetime.timedelta(days=1))
                 if newer_data is not None and not newer_data.empty:
                     dfs_to_concat.append(newer_data)
@@ -71,34 +75,30 @@ class StockDataCache:
             # Overwrite cache with combined data
             cached_df.to_json(file_path, orient="table")
             print(f"Cache updated for {ticker}.")
-        elif start_date >= first_cached_date and end_date <= last_cached_date:
-            print(f"Cache hit for {ticker}. All requested data available locally.")
 
         return cached_df
-
-    def _handle_cache_hit(self, ticker: str, start_date: datetime.date, end_date: datetime.date, file_path: str) -> pd.DataFrame:
-        try:
-            # Load existing cache
-            cached_df = pd.read_json(file_path, orient="table")
-
-            # Check if we need to fetch missing data (either older or newer)
-            if not cached_df.empty:
-                return self._handle_partial_hit(ticker, start_date, end_date, cached_df, file_path)
-            else:
-                # File exists but is empty, redownload full
-                print(f"Cache for {ticker} is empty. Downloading full range.")
-                return self._download_and_save_full(ticker, start_date, end_date, file_path)
-        except Exception as e:
-            print(f"Error reading cache for {ticker}: {e}. Redownloading.")
-            return self._download_and_save_full(ticker, start_date, end_date, file_path)
 
     def get_data(self, ticker: str, start_date: datetime.date, end_date: datetime.date) -> pd.DataFrame:
         file_path = self._get_file_path(ticker)
         
+        cached_df = None
         if os.path.exists(file_path):
-            cached_df = self._handle_cache_hit(ticker, start_date, end_date, file_path)
-        else:
+            try:
+                cached_df = pd.read_json(file_path, orient="table")
+            except Exception as e:
+                print(f"Error reading cache for {ticker}: {e}. Redownloading.")
+                cached_df = None
+
+        if cached_df is None or cached_df.empty:
             cached_df = self._handle_cache_miss(ticker, start_date, end_date, file_path)
+        else:
+            first_cached_date = cached_df.index.min().date()
+            last_cached_date = cached_df.index.max().date()
+
+            if start_date >= first_cached_date and end_date <= last_cached_date:
+                cached_df = self._handle_cache_hit(ticker, cached_df)
+            else:
+                cached_df = self._handle_partial_hit(ticker, start_date, end_date, cached_df, file_path)
 
         if cached_df is not None and not cached_df.empty:
             # Return only the requested date range
