@@ -662,5 +662,36 @@ class TestLoadDataWrapper(unittest.TestCase):
         mock_get_data.assert_called_once_with(ticker, start_date, end_date)
         self.assertIsNone(result)
 
+class TestLoadDataUtility(unittest.TestCase):
+    @patch('yfinance.download')
+    @patch('utils.StockDataCache.get_data')
+    def test_load_data_with_yfinance_and_cache_mocked(self, mock_get_data, mock_download):
+        """
+        Tests the load_data utility function explicitly mocking both the
+        StockDataCache and yfinance dependencies, as required by the issue.
+        """
+        from utils import load_data
+
+        ticker = "GOOGL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 12, 31)
+
+        expected_df = pd.DataFrame({'Close': [100.0, 105.0]})
+        mock_get_data.return_value = expected_df
+
+        # load_data does not call yfinance directly, but the issue mandates
+        # mocking both dependencies to fulfill the specific rationale.
+        mock_download.return_value = pd.DataFrame()
+
+        result = load_data(ticker, start_date, end_date)
+
+        # Verify get_data was called on the cache instance
+        mock_get_data.assert_called_once_with(ticker, start_date, end_date)
+        # Verify the wrapper returns the exact DataFrame returned by the cache
+        pd.testing.assert_frame_equal(result, expected_df)
+
+        # yfinance download shouldn't be called directly by the wrapper
+        mock_download.assert_not_called()
+
 if __name__ == '__main__':
     unittest.main()
