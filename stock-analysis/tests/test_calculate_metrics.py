@@ -211,5 +211,22 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Win Rate'], '100.00%')
         self.assertEqual(result['Average Return'], '50.00%')
 
+    def test_calculate_metrics_all_zero_positions(self):
+        """
+        Tests backtesting loop when there are only zeros in the Position column.
+        The function should return the default zero-filled dictionary without doing full loop.
+        """
+        dates = pd.date_range('2024-01-01', periods=3)
+        df = pd.DataFrame({
+            'Close': [100.0, 105.0, 110.0],
+            'Position': [0.0, 0.0, 0.0]
+        }, index=dates)
+
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Trades History'], [])
+
 if __name__ == '__main__':
     unittest.main()
