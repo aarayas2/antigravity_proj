@@ -156,3 +156,38 @@ def test_apply_strategy_empty_dataframe():
 
     assert isinstance(result_df, pd.DataFrame), "Should return a DataFrame."
     pd.testing.assert_frame_equal(result_df, pd.DataFrame()), "Should return an empty DataFrame."
+
+def test_get_signals_no_signals_in_column():
+    """Test get_signals when DataFrame has a 'Signal' column but no 1.0 or -1.0 signals."""
+    df = pd.DataFrame({
+        'Close': [10.0, 20.0, 30.0],
+        'Signal': [0.0, 0.0, 0.0]
+    })
+    buy_signals, sell_signals = get_signals(df)
+
+    assert isinstance(buy_signals, pd.DataFrame), "Buy signals should be a DataFrame."
+    assert isinstance(sell_signals, pd.DataFrame), "Sell signals should be a DataFrame."
+
+    # When the column exists, it filters rows. The resulting DataFrame is empty but maintains columns.
+    # So we compare its shape to (0, 2) or use assert_frame_equal with check_index_type=False etc.
+    # Actually, if we just want to assert they are empty, we can check .empty or compare to an empty DF with same columns.
+    expected_empty = pd.DataFrame(columns=['Close', 'Signal']).astype({'Close': float, 'Signal': float})
+    pd.testing.assert_frame_equal(buy_signals, expected_empty, check_index_type=False)
+    pd.testing.assert_frame_equal(sell_signals, expected_empty, check_index_type=False)
+
+def test_get_signals_missing_signal_column():
+    """
+    Test explicitly the requirement:
+    Passing a dataframe without the Signal column will return empty dataframes.
+    The test requires asserting the returned dataframes are indeed empty.
+    """
+    df = pd.DataFrame({'Close': [10.0, 20.0, 30.0]})
+    # Intentionally no 'Signal' column
+    buy_signals, sell_signals = get_signals(df)
+
+    assert isinstance(buy_signals, pd.DataFrame)
+    assert isinstance(sell_signals, pd.DataFrame)
+
+    # Rationale states we must assert returned are indeed empty (using assert_frame_equal)
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame())
+    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
