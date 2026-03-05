@@ -10,38 +10,60 @@ import datetime
 from utils import calculate_metrics, load_data
 
 class TestLoadData(unittest.TestCase):
-    @patch('utils._cache')
-    def test_load_data_returns_dataframe(self, mock_cache):
-        # Arrange
-        ticker = "AAPL"
-        start_date = datetime.date(2023, 1, 1)
-        end_date = datetime.date(2023, 1, 10)
+    @patch('utils.yf.download')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_load_data_fetches_and_caches(self, mock_exists, mock_makedirs, mock_download):
+        from utils import StockDataCache, load_data
+        import utils
 
-        expected_df = pd.DataFrame({'Close': [150, 155]}, index=pd.date_range(start_date, periods=2))
-        mock_cache.get_data.return_value = expected_df
+        # Simulate cache miss by mocking os.path.exists
+        mock_exists.return_value = False
 
-        # Act
-        result = load_data(ticker, start_date, end_date)
+        # Override the global _cache with a fresh instance so we can intercept yfinance
+        with patch('utils._cache', StockDataCache(data_dir='test_data')):
+            ticker = "AAPL"
+            start_date = datetime.date(2023, 1, 1)
+            end_date = datetime.date(2023, 1, 10)
 
-        # Assert
-        mock_cache.get_data.assert_called_once_with(ticker, start_date, end_date)
-        pd.testing.assert_frame_equal(result, expected_df)
+            # Create dummy data from yfinance
+            expected_df = pd.DataFrame({'Close': [150, 155]}, index=pd.date_range(start_date, periods=2))
+            mock_download.return_value = expected_df
 
-    @patch('utils._cache')
-    def test_load_data_returns_none(self, mock_cache):
-        # Arrange
-        ticker = "INVALID"
-        start_date = datetime.date(2023, 1, 1)
-        end_date = datetime.date(2023, 1, 10)
+            # Mock DataFrame.to_json to avoid writing to disk during test
+            with patch('pandas.DataFrame.to_json') as mock_to_json:
+                result = load_data(ticker, start_date, end_date)
 
-        mock_cache.get_data.return_value = None
+                # Verify that yfinance was called correctly
+                mock_download.assert_called_once_with(ticker, start=start_date, end=end_date + datetime.timedelta(days=1))
 
-        # Act
-        result = load_data(ticker, start_date, end_date)
+                # Verify that to_json was called to save the cache
+                mock_to_json.assert_called_once()
 
-        # Assert
-        mock_cache.get_data.assert_called_once_with(ticker, start_date, end_date)
-        self.assertIsNone(result)
+                # Verify the result is the expected dataframe
+                pd.testing.assert_frame_equal(result, expected_df)
+
+    @patch('utils.yf.download')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_load_data_returns_none_on_empty(self, mock_exists, mock_makedirs, mock_download):
+        from utils import StockDataCache, load_data
+
+        # Simulate cache miss
+        mock_exists.return_value = False
+
+        with patch('utils._cache', StockDataCache(data_dir='test_data')):
+            ticker = "INVALID"
+            start_date = datetime.date(2023, 1, 1)
+            end_date = datetime.date(2023, 1, 10)
+
+            # Simulate empty dataframe from yfinance
+            mock_download.return_value = pd.DataFrame()
+
+            result = load_data(ticker, start_date, end_date)
+
+            mock_download.assert_called_once()
+            self.assertIsNone(result)
 
 
 class TestCalculateMetrics(unittest.TestCase):
@@ -225,6 +247,112 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(trades[0]['exit_price'], 150.0)
         self.assertEqual(trades[0]['profit'], 50.0)
         self.assertEqual(trades[0]['profit_pct'], 50.0)
+
+class TestApplyStrategy(unittest.TestCase):
+    @patch('utils.STRATEGIES')
+    def test_apply_strategy_found(self, mock_strategies):
+        # Arrange
+        strategy_name = "test_strategy"
+        df_input = pd.DataFrame({'Close': [100, 105]})
+        df_output = pd.DataFrame({'Close': [100, 105], 'Signal': [1, -1]})
+
+        mock_strategy_func = MagicMock(return_value=df_output)
+        mock_strategies.__contains__.side_effect = lambda k: k == strategy_name
+        mock_strategies.__getitem__.side_effect = lambda k: {"apply_strategy": mock_strategy_func}
+
+        # Act
+        from utils import apply_strategy
+        result = apply_strategy(df_input, strategy_name)
+
+        # Assert
+        mock_strategy_func.assert_called_once_with(df_input)
+        pd.testing.assert_frame_equal(result, df_output)
+
+    @patch('utils.STRATEGIES')
+    def test_apply_strategy_not_found(self, mock_strategies):
+        # Arrange
+        strategy_name = "unknown_strategy"
+        df_input = pd.DataFrame({'Close': [100, 105]})
+
+        mock_strategies.__contains__.side_effect = lambda k: False
+
+        # Act
+        from utils import apply_strategy
+        result = apply_strategy(df_input, strategy_name)
+
+        # Assert
+        pd.testing.assert_frame_equal(result, df_input)
+
+class TestStockDataCache(unittest.TestCase):
+    @patch('utils.yf.download')
+    def test_download_from_yf_success(self, mock_download):
+        from utils import _cache
+        import datetime
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        expected_df = pd.DataFrame({'Close': [150, 155]})
+        mock_download.return_value = expected_df
+
+        result = _cache._download_from_yf(ticker, start_date, end_date)
+
+        mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
+        pd.testing.assert_frame_equal(result, expected_df)
+
+    @patch('utils.yf.download')
+    def test_download_from_yf_empty(self, mock_download):
+        from utils import _cache
+        import datetime
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        expected_df = pd.DataFrame()
+        mock_download.return_value = expected_df
+
+        result = _cache._download_from_yf(ticker, start_date, end_date)
+
+        mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
+        self.assertIsNone(result)
+
+    @patch('utils.yf.download')
+    def test_download_from_yf_multiindex(self, mock_download):
+        from utils import _cache
+        import datetime
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        # Create a DataFrame with a MultiIndex column
+        arrays = [['Close', 'Close'], ['AAPL', 'MSFT']]
+        tuples = list(zip(*arrays))
+        index = pd.MultiIndex.from_tuples(tuples, names=['Price', 'Ticker'])
+        expected_df = pd.DataFrame([[150, 200]], columns=index)
+
+        mock_download.return_value = expected_df
+
+        result = _cache._download_from_yf(ticker, start_date, end_date)
+
+        mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
+        # Expected column index is a simple Index of the top level
+        expected_columns = pd.Index(['Close', 'Close'], name='Price')
+        pd.testing.assert_index_equal(result.columns, expected_columns)
+
+    @patch('utils.yf.download')
+    def test_download_from_yf_exception(self, mock_download):
+        from utils import _cache
+        import datetime
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        mock_download.side_effect = Exception("Download failed")
+
+        result = _cache._download_from_yf(ticker, start_date, end_date)
+
+        mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
+        self.assertIsNone(result)
 
 if __name__ == '__main__':
     unittest.main()
