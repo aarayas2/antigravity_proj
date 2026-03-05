@@ -596,6 +596,39 @@ class TestJsonStatsStorageReadFinal:
 
         assert storage.read() == []
 
+class TestJsonStatsStorageReadAdditionalTests:
+    """
+    Additional tests for JsonStatsStorage read method to satisfy the specific issue request.
+    """
+    def test_read_returns_empty_list_on_file_not_found_extra(self, tmp_path):
+        file_path = tmp_path / "does_not_exist.json"
+        storage = JsonStatsStorage(str(file_path))
+        if os.path.exists(str(file_path)):
+            os.remove(str(file_path))
+        assert storage.read() == []
+
+    def test_read_returns_empty_list_on_json_decode_error_extra(self, tmp_path):
+        file_path = tmp_path / "bad.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            f.write("definitely not json")
+        assert storage.read() == []
+
+    def test_read_returns_empty_list_on_non_list_type_extra(self, tmp_path):
+        file_path = tmp_path / "dict.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            json.dump({"i_am": "a dictionary"}, f)
+        assert storage.read() == []
+
+    def test_read_returns_valid_data_on_success_extra(self, tmp_path):
+        file_path = tmp_path / "good.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"TEST": {"metric": 123}}]
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+        assert storage.read() == data
+
 def test_json_stats_storage_write_exception_path(tmp_path):
     """
     Missing error path test for JsonStatsStorage write method
