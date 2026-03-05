@@ -170,5 +170,61 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Win Rate'], '0.00%')
         self.assertEqual(result['Average Return'], '0.00%')
 
+    def test_zero_buy_price(self):
+        dates = pd.date_range('2023-01-01', periods=2)
+        df = pd.DataFrame({
+            'Close': [0.0, 150.0],
+            'Position': [1.0, -1.0]
+        }, index=dates)
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Win Rate'], '0.00%')
+        self.assertEqual(result['Average Return'], '0.00%')
+
+    def test_zero_exit_price_and_buy_price(self):
+        dates = pd.date_range('2023-01-01', periods=2)
+        # Force a case where buy_price could be 0, but since price > 0 is required,
+        # it shouldn't buy. Let's test a valid buy, but sell price is 0.
+        df = pd.DataFrame({
+            'Close': [100.0, 0.0],
+            'Position': [1.0, -1.0]
+        }, index=dates)
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Number of Trades'], 1)
+        self.assertEqual(result['Total Return'], '-100.00%')
+        self.assertEqual(result['Win Rate'], '0.00%')
+        self.assertEqual(result['Average Return'], '-100.00%')
+
+    def test_calculate_metrics_happy_path(self):
+        """
+        Happy path test: Buying at a normal price, and selling at a higher price
+        to verify standard behavior.
+        """
+        dates = pd.date_range('2024-01-01', periods=3)
+        # Day 1: Price 100, Buy 100 shares (10000 capital)
+        # Day 2: Price 120, Hold
+        # Day 3: Price 150, Sell 100 shares -> 15000 capital
+        df = pd.DataFrame({
+            'Close': [100.0, 120.0, 150.0],
+            'Position': [1.0, 0.0, -1.0]
+        }, index=dates)
+
+        result = calculate_metrics(df, "happy_path_strategy")
+
+        self.assertEqual(result['Number of Trades'], 1)
+        self.assertEqual(result['Total Return'], '50.00%')
+        self.assertEqual(result['Win Rate'], '100.00%')
+        self.assertEqual(result['Average Return'], '50.00%')
+
+        trades = result['Trades History']
+        self.assertEqual(len(trades), 1)
+        self.assertEqual(trades[0]['entry_price'], 100.0)
+        self.assertEqual(trades[0]['exit_price'], 150.0)
+        self.assertEqual(trades[0]['profit'], 50.0)
+        self.assertEqual(trades[0]['profit_pct'], 50.0)
+
 if __name__ == '__main__':
     unittest.main()
