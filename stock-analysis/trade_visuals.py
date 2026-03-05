@@ -67,9 +67,14 @@ class TradeTooltipFactory:
             is_open = False
             if pd.isna(exit_date) or exit_date is None:
                 is_open = True
-                # If we don't have a fallback, we can't draw the rectangle.
-                # The caller should ensure a fallback date if they want open trades drawn.
-                return None
+                # If we don't have a fallback in the dictionary (e.g., 'fallback_exit_date'),
+                # we can't draw the rectangle. The caller should ensure a fallback date
+                # if they want open trades drawn.
+                fallback_exit_date = trade.get('fallback_exit_date')
+                if fallback_exit_date is not None and not pd.isna(fallback_exit_date):
+                    exit_date = fallback_exit_date
+                else:
+                    return None
 
             # 2. Extract and Validate Prices
             entry_price = trade.get('entry_price')
