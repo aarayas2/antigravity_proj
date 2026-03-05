@@ -140,33 +140,47 @@ def _create_trade_record(entry_date, exit_date, entry_price, exit_price):
         'profit_pct': (exit_price - entry_price) / entry_price * 100 if entry_price > 0 else 0
     }
 
+class _TradeEvaluator:
+    def __init__(self, initial_capital):
+        self.capital = initial_capital
+        self.position_size = 0
+        self.buy_price = 0
+        self.buy_date = None
+        self.trades_history = []
+
+    def process_buy(self, date, price):
+        if self.capital > price and price > 0:
+            shares_to_buy = self.capital // price
+            self.position_size += shares_to_buy
+            self.capital -= shares_to_buy * price
+            self.buy_price = price
+            self.buy_date = date
+
+    def process_sell(self, date, price):
+        if self.position_size > 0:
+            self.capital += self.position_size * price
+            self.trades_history.append(_create_trade_record(self.buy_date, date, self.buy_price, price))
+            self.position_size = 0
+            self.buy_price = 0
+            self.buy_date = None
+
+    def close_open_position(self, exit_date, exit_price):
+        if self.position_size > 0:
+            self.capital += self.position_size * exit_price
+            self.trades_history.append(_create_trade_record(self.buy_date, exit_date, self.buy_price, exit_price))
+
 def _evaluate_trade_sequence(dates, prices, positions, initial_capital, exit_date, exit_price):
-    capital = initial_capital
-    position_size = 0
-    buy_price = 0
-    buy_date = None
-    trades_history = []
+    evaluator = _TradeEvaluator(initial_capital)
 
     for date, price, pos in zip(dates, prices, positions):
-        if pos == 1.0 and capital > price and price > 0: # Buy
-            shares_to_buy = capital // price
-            position_size += shares_to_buy
-            capital -= shares_to_buy * price
-            buy_price = price
-            buy_date = date
-        elif pos == -1.0 and position_size > 0: # Sell
-            capital += position_size * price
-            trades_history.append(_create_trade_record(buy_date, date, buy_price, price))
-            position_size = 0
-            buy_price = 0
-            buy_date = None
+        if pos == 1.0:
+            evaluator.process_buy(date, price)
+        elif pos == -1.0:
+            evaluator.process_sell(date, price)
 
-    # Close out open position at the end
-    if position_size > 0:
-        capital += position_size * exit_price
-        trades_history.append(_create_trade_record(buy_date, exit_date, buy_price, exit_price))
+    evaluator.close_open_position(exit_date, exit_price)
 
-    return capital, trades_history
+    return evaluator.capital, evaluator.trades_history
 
 def _compile_performance_metrics(initial_capital, final_capital, trades_history):
     trades = len(trades_history)
