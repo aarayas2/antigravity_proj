@@ -16,6 +16,9 @@ class TestStockDataCacheCoverage(unittest.TestCase):
     def test_get_file_path_path_traversal(self):
         # Trigger path traversal exception by mocking os.path.abspath to return something outside
         # the expected data directory.
+        # Since the _get_file_path uses real `os.path.abspath`, it's hard to trigger path traversal
+        # using standard string manipulations since `os.path.basename` strips off the slashes.
+        # So we mock os.path.basename to allow a traversal string like '../escaped' to pass.
         with patch('os.path.basename') as mock_basename:
             mock_basename.return_value = '../escaped'
             with self.assertRaises(ValueError):

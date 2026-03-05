@@ -43,6 +43,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [1.0, 0.0, -1.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
+
         self.assertEqual(result['Number of Trades'], 1)
         self.assertEqual(result['Total Return'], '50.00%')
         self.assertEqual(result['Win Rate'], '100.00%')
@@ -61,6 +62,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [1.0, 0.0, -1.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
+
         self.assertEqual(result['Number of Trades'], 1)
         self.assertEqual(result['Total Return'], '-50.00%')
         self.assertEqual(result['Win Rate'], '0.00%')
@@ -79,6 +81,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [1.0, -1.0, 0.0, 1.0, -1.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
+
         self.assertEqual(result['Number of Trades'], 2)
         # Profit trade 1: (150-100)/100 = 50%
         # Profit trade 2: (180-150)/150 = 20%
@@ -97,6 +100,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [1.0, 0.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
+
         self.assertEqual(result['Number of Trades'], 1)
         self.assertEqual(result['Total Return'], '100.00%')
         self.assertEqual(result['Win Rate'], '100.00%')
@@ -110,6 +114,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [-1.0, -1.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
+
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Total Return'], '0.00%')
 
@@ -121,6 +126,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [1.0, 1.0, -1.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
+
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Total Return'], '0.00%')
 
@@ -134,6 +140,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [1.0, 0.0, -1.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
+
         self.assertEqual(result['Number of Trades'], 1)
         # Total Return: (13300 - 10000) / 10000 = 33%
         self.assertEqual(result['Total Return'], '33.00%')
