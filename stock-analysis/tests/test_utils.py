@@ -248,6 +248,97 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(trades[0]['profit'], 50.0)
         self.assertEqual(trades[0]['profit_pct'], 50.0)
 
+    def test_consecutive_buys_and_sells(self):
+        """
+        Tests behavior when multiple buy signals arrive sequentially without sell signals,
+        and multiple sell signals arrive sequentially without buy signals.
+        """
+        dates = pd.date_range('2024-01-01', periods=6)
+        # Capital: 10000
+        # Day 1: Buy @ 100 -> 100 shares, capital 0
+        # Day 2: Buy @ 50 -> Ignored because capital 0
+        # Day 3: Sell @ 150 -> 100 shares sold, capital 15000
+        # Day 4: Sell @ 160 -> Ignored because position_size 0
+        # Day 5: Buy @ 100 -> 150 shares, capital 0
+        # Day 6: Hold (Open position at end)
+        df = pd.DataFrame({
+            'Close': [100.0, 50.0, 150.0, 160.0, 100.0, 200.0],
+            'Position': [1.0, 1.0, -1.0, -1.0, 1.0, 0.0]
+        }, index=dates)
+
+        result = calculate_metrics(df, "consecutive_signals")
+
+        self.assertEqual(result['Number of Trades'], 2)
+        # Trade 1: Entry 100, Exit 150. Profit = 50. Profit Pct = 50.0%
+        # Trade 2 (End): Entry 100, Exit 200. Profit = 100. Profit Pct = 100.0%
+        # Wait, the second buy @ 100 happens when capital is 15000, so 150 shares bought.
+        # But wait, looking at `calculate_metrics`, it filters out rows where Position is 0!
+        # `df[df['Position'] != 0.0]`
+        # So row 6 (Hold) is filtered out!
+        # The exit info is extracted from the UNFILTERED df at the beginning:
+        # exit_price = df['Close'].iat[-1] -> 200.0
+        # exit_date = df.index[-1] -> Day 6
+        # So it correctly closes the open position of 150 shares at 200.0.
+        # So Final capital = 15000 (from previous sell) - 15000 (bought 150 * 100) + 150 * 200 = 30000
+        # Total Return = (30000 - 10000) / 10000 * 100 = 200.00%
+        self.assertEqual(result['Total Return'], '200.00%')
+        self.assertEqual(result['Win Rate'], '100.00%')
+        self.assertEqual(result['Average Return'], '75.00%')
+
+    def test_fractional_capital_remainder(self):
+        """
+        Tests backtesting loop logic when capital doesn't perfectly divide by price,
+        leaving a remainder of uninvested capital.
+        """
+        dates = pd.date_range('2024-01-01', periods=3)
+        # Capital: 10000
+        # Day 1: Buy @ 300 -> 33 shares (9900 used), 100 remaining
+        # Day 2: Hold
+        # Day 3: Sell @ 400 -> 33 * 400 = 13200 + 100 = 13300 final capital
+        df = pd.DataFrame({
+            'Close': [300.0, 350.0, 400.0],
+            'Position': [1.0, 0.0, -1.0]
+        }, index=dates)
+
+        result = calculate_metrics(df, "fractional_capital")
+
+        self.assertEqual(result['Number of Trades'], 1)
+        # Total Return = (13300 - 10000) / 10000 * 100 = 33.00%
+        self.assertEqual(result['Total Return'], '33.00%')
+        self.assertEqual(result['Win Rate'], '100.00%')
+
+        trades = result['Trades History']
+        self.assertEqual(len(trades), 1)
+        self.assertEqual(trades[0]['entry_price'], 300.0)
+        self.assertEqual(trades[0]['exit_price'], 400.0)
+        self.assertEqual(trades[0]['profit'], 100.0)
+        self.assertAlmostEqual(trades[0]['profit_pct'], 33.33333333333333)
+
+    def test_negative_prices_handling(self):
+        """
+        Tests handling of negative or zero prices according to `price > 0` condition.
+        """
+        dates = pd.date_range('2024-01-01', periods=3)
+        # Day 1: Buy @ -50 -> Should be ignored
+        # Day 2: Buy @ 0 -> Should be ignored
+        # Day 3: Buy @ 100 -> Should be executed
+        df = pd.DataFrame({
+            'Close': [-50.0, 0.0, 100.0],
+            'Position': [1.0, 1.0, 1.0]
+        }, index=dates)
+
+        # Force exit price manually by checking the last row behavior
+        # In actual calculate_metrics, it uses exit_price = df['Close'].iat[-1]
+        # In this case exit_price is 100.0. The open position (bought at 100.0) will be closed at 100.0.
+        result = calculate_metrics(df, "negative_prices")
+
+        self.assertEqual(result['Number of Trades'], 1)
+        self.assertEqual(result['Total Return'], '0.00%')
+        trades = result['Trades History']
+        self.assertEqual(trades[0]['entry_price'], 100.0)
+        self.assertEqual(trades[0]['exit_price'], 100.0)
+        self.assertEqual(trades[0]['profit'], 0.0)
+        
 class TestApplyStrategy(unittest.TestCase):
     @patch('utils.STRATEGIES')
     def test_apply_strategy_found(self, mock_strategies):
