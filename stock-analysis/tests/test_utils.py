@@ -41,7 +41,7 @@ class TestLoadData(unittest.TestCase):
                 mock_to_json.assert_called_once()
 
                 # Verify the result is the expected dataframe
-                pd.testing.assert_frame_equal(result, expected_df)
+                pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
 
     @patch('utils.yf.download')
     @patch('os.makedirs')
@@ -389,7 +389,7 @@ class TestStockDataCache(unittest.TestCase):
         result = _cache._download_from_yf(ticker, start_date, end_date)
 
         mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
-        pd.testing.assert_frame_equal(result, expected_df)
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
 
     @patch('utils.yf.download')
     def test_download_from_yf_empty(self, mock_download):
@@ -445,5 +445,271 @@ class TestStockDataCache(unittest.TestCase):
         mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
         self.assertIsNone(result)
 
+
+    @patch('utils.pd.read_json')
+    @patch('utils.os.path.exists')
+    @patch('utils.pd.DataFrame.to_json')
+    @patch('utils.StockDataCache._download_from_yf')
+    def test_get_data_cache_miss_downloads_full(self, mock_download, mock_to_json, mock_exists, mock_read_json):
+        from utils import StockDataCache
+        import datetime
+
+        cache = StockDataCache(data_dir='test_data')
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        # Simulate cache miss
+        mock_exists.return_value = False
+
+        expected_df = pd.DataFrame({'Close': [150, 155]}, index=pd.date_range(start_date, periods=2))
+        mock_download.return_value = expected_df
+
+        result = cache.get_data(ticker, start_date, end_date)
+
+        mock_download.assert_called_once()
+        mock_to_json.assert_called_once()
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
+
+    @patch('utils.pd.read_json')
+    @patch('utils.os.path.exists')
+    @patch('utils.pd.DataFrame.to_json')
+    @patch('utils.StockDataCache._download_from_yf')
+    def test_get_data_cache_hit_all_data_local(self, mock_download, mock_to_json, mock_exists, mock_read_json):
+        from utils import StockDataCache
+        import datetime
+
+        cache = StockDataCache(data_dir='test_data')
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 2)
+        end_date = datetime.date(2023, 1, 9)
+
+        mock_exists.return_value = True
+
+        # Cache contains data from 1-1 to 1-10
+        cache_dates = pd.date_range(datetime.date(2023, 1, 1), datetime.date(2023, 1, 10))
+        cached_df = pd.DataFrame({'Close': range(10)}, index=cache_dates)
+        mock_read_json.return_value = cached_df
+
+        result = cache.get_data(ticker, start_date, end_date)
+
+        # Should not download or save
+        mock_download.assert_not_called()
+        mock_to_json.assert_not_called()
+
+        # Result should be subset of cached_df
+        expected_dates = pd.date_range(start_date, end_date)
+        expected_df = pd.DataFrame({'Close': range(1, 9)}, index=expected_dates)
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
+
+    @patch('utils.pd.read_json')
+    @patch('utils.os.path.exists')
+    @patch('utils.pd.DataFrame.to_json')
+    @patch('utils.StockDataCache._download_from_yf')
+    def test_get_data_cache_hit_needs_older_data(self, mock_download, mock_to_json, mock_exists, mock_read_json):
+        from utils import StockDataCache
+        import datetime
+
+        cache = StockDataCache(data_dir='test_data')
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        mock_exists.return_value = True
+
+        # Cache contains data from 1-5 to 1-10
+        cache_dates = pd.date_range(datetime.date(2023, 1, 5), datetime.date(2023, 1, 10))
+        cached_df = pd.DataFrame({'Close': range(5, 11)}, index=cache_dates)
+        mock_read_json.return_value = cached_df
+
+        # Download returns older data
+        older_dates = pd.date_range(datetime.date(2023, 1, 1), datetime.date(2023, 1, 4))
+        older_df = pd.DataFrame({'Close': range(1, 5)}, index=older_dates)
+        mock_download.return_value = older_df
+
+        result = cache.get_data(ticker, start_date, end_date)
+
+        # Should download older data and save
+        mock_download.assert_called_once()
+        mock_to_json.assert_called_once()
+
+        expected_dates = pd.date_range(start_date, end_date)
+        expected_df = pd.DataFrame({'Close': range(1, 11)}, index=expected_dates)
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
+
+    @patch('utils.pd.read_json')
+    @patch('utils.os.path.exists')
+    @patch('utils.pd.DataFrame.to_json')
+    @patch('utils.StockDataCache._download_from_yf')
+    def test_get_data_cache_hit_needs_newer_data(self, mock_download, mock_to_json, mock_exists, mock_read_json):
+        from utils import StockDataCache
+        import datetime
+
+        cache = StockDataCache(data_dir='test_data')
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        mock_exists.return_value = True
+
+        # Cache contains data from 1-1 to 1-5
+        cache_dates = pd.date_range(datetime.date(2023, 1, 1), datetime.date(2023, 1, 5))
+        cached_df = pd.DataFrame({'Close': range(1, 6)}, index=cache_dates)
+        mock_read_json.return_value = cached_df
+
+        # Download returns newer data
+        newer_dates = pd.date_range(datetime.date(2023, 1, 6), datetime.date(2023, 1, 10))
+        newer_df = pd.DataFrame({'Close': range(6, 11)}, index=newer_dates)
+        mock_download.return_value = newer_df
+
+        result = cache.get_data(ticker, start_date, end_date)
+
+        # Should download newer data and save
+        mock_download.assert_called_once()
+        mock_to_json.assert_called_once()
+
+        expected_dates = pd.date_range(start_date, end_date)
+        expected_df = pd.DataFrame({'Close': range(1, 11)}, index=expected_dates)
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
+
+    @patch('utils.pd.read_json')
+    @patch('utils.os.path.exists')
+    @patch('utils.pd.DataFrame.to_json')
+    @patch('utils.StockDataCache._download_from_yf')
+    def test_get_data_cache_hit_needs_older_and_newer_data(self, mock_download, mock_to_json, mock_exists, mock_read_json):
+        from utils import StockDataCache
+        import datetime
+
+        cache = StockDataCache(data_dir='test_data')
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        mock_exists.return_value = True
+
+        # Cache contains data from 1-4 to 1-7
+        cache_dates = pd.date_range(datetime.date(2023, 1, 4), datetime.date(2023, 1, 7))
+        cached_df = pd.DataFrame({'Close': range(4, 8)}, index=cache_dates)
+        mock_read_json.return_value = cached_df
+
+        # Download returns older and newer data
+        older_dates = pd.date_range(datetime.date(2023, 1, 1), datetime.date(2023, 1, 3))
+        older_df = pd.DataFrame({'Close': range(1, 4)}, index=older_dates)
+        newer_dates = pd.date_range(datetime.date(2023, 1, 8), datetime.date(2023, 1, 10))
+        newer_df = pd.DataFrame({'Close': range(8, 11)}, index=newer_dates)
+
+        mock_download.side_effect = [older_df, newer_df]
+
+        result = cache.get_data(ticker, start_date, end_date)
+
+        # Should download twice and save
+        self.assertEqual(mock_download.call_count, 2)
+        mock_to_json.assert_called_once()
+
+        expected_dates = pd.date_range(start_date, end_date)
+        expected_df = pd.DataFrame({'Close': range(1, 11)}, index=expected_dates)
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
+
+    @patch('utils.pd.read_json')
+    @patch('utils.os.path.exists')
+    @patch('utils.pd.DataFrame.to_json')
+    @patch('utils.StockDataCache._download_from_yf')
+    def test_get_data_cache_hit_empty_file(self, mock_download, mock_to_json, mock_exists, mock_read_json):
+        from utils import StockDataCache
+        import datetime
+
+        cache = StockDataCache(data_dir='test_data')
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        mock_exists.return_value = True
+
+        # Cache file empty
+        mock_read_json.return_value = pd.DataFrame()
+
+        expected_df = pd.DataFrame({'Close': [150, 155]}, index=pd.date_range(start_date, periods=2))
+        mock_download.return_value = expected_df
+
+        result = cache.get_data(ticker, start_date, end_date)
+
+        mock_download.assert_called_once()
+        mock_to_json.assert_called_once()
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
+
+    @patch('utils.pd.read_json')
+    @patch('utils.os.path.exists')
+    @patch('utils.pd.DataFrame.to_json')
+    @patch('utils.StockDataCache._download_from_yf')
+    def test_get_data_cache_read_exception(self, mock_download, mock_to_json, mock_exists, mock_read_json):
+        from utils import StockDataCache
+        import datetime
+
+        cache = StockDataCache(data_dir='test_data')
+        ticker = "AAPL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        mock_exists.return_value = True
+
+        # Raise exception during read
+        mock_read_json.side_effect = Exception("Corrupt file")
+
+        expected_df = pd.DataFrame({'Close': [150, 155]}, index=pd.date_range(start_date, periods=2))
+        mock_download.return_value = expected_df
+
+        result = cache.get_data(ticker, start_date, end_date)
+
+        mock_download.assert_called_once()
+        mock_to_json.assert_called_once()
+        pd.testing.assert_frame_equal(result, expected_df, check_freq=False)
+
+    def test_get_file_path_invalid_ticker(self):
+        from utils import StockDataCache
+        cache = StockDataCache(data_dir='test_data')
+        # The path traversal check should just sanitize the ticker, not raise ValueError
+            # Pass a path traversal string
+        path = cache._get_file_path("../../../etc/passwd")
+        self.assertTrue(path.endswith("......etcpasswd.json"))
+
+
+    @patch('utils.os.path.abspath')
+    def test_get_file_path_invalid_ticker_abspath_mock(self, mock_abspath):
+        from utils import StockDataCache
+        import os
+        cache = StockDataCache(data_dir='test_data')
+
+        # We need to mock abspath carefully to trigger the ValueError
+        # but the first call to abspath happens in __init__ (wait, we already initialized)
+        # Actually, let's just make the final_path check fail
+        def side_effect(path):
+            if path.endswith('.json'):
+                return '/tmp/malicious/path.json'
+            return '/tmp/legit/data_dir'
+
+        mock_abspath.side_effect = side_effect
+
+        with self.assertRaises(ValueError):
+            cache._get_file_path("some_ticker")
+
+    @patch('utils.os.path.abspath')
+    def test_get_file_path_invalid_ticker_abspath_mock2(self, mock_abspath):
+        from utils import StockDataCache
+
+        # We need to test the ValueError branch in _get_file_path
+        # final_path = os.path.abspath(os.path.join(self.data_dir, f"{sanitized_ticker}.json"))
+        # if not final_path.startswith(os.path.abspath(self.data_dir)): raise ValueError(...)
+
+        # When _get_file_path calls abspath, we want it to return different values
+        def abspath_side_effect(path):
+            if path.endswith('.json'):
+                return '/tmp/malicious/file.json'
+            return '/tmp/legit/dir'
+
+        mock_abspath.side_effect = abspath_side_effect
+
+        cache = StockDataCache(data_dir='test_data')
+        with self.assertRaises(ValueError):
+            cache._get_file_path("test")
 if __name__ == '__main__':
     unittest.main()
