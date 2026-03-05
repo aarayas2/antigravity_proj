@@ -607,5 +607,49 @@ class TestStockDataCache(unittest.TestCase):
         mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
         self.assertIsNone(result)
 
+class TestLoadDataWrapper(unittest.TestCase):
+    @patch('utils.yf.download')
+    @patch('utils.StockDataCache.get_data')
+    def test_load_data_wrapper_mocks(self, mock_get_data, mock_yf_download):
+        """
+        Tests the load_data wrapper by explicitly mocking the underlying
+        StockDataCache and yfinance dependencies as requested.
+        """
+        from utils import load_data
+
+        ticker = "MSFT"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 12, 31)
+
+        # We mock yfinance download even though load_data shouldn't call it directly,
+        # just to satisfy the strict mocking requirement of the issue.
+        mock_yf_download.return_value = pd.DataFrame()
+
+        expected_df = pd.DataFrame({'Close': [250.0, 255.0]})
+        mock_get_data.return_value = expected_df
+
+        result = load_data(ticker, start_date, end_date)
+
+        mock_get_data.assert_called_once_with(ticker, start_date, end_date)
+        pd.testing.assert_frame_equal(result, expected_df)
+
+    @patch('utils._cache.get_data')
+    def test_load_data_wrapper_returns_none(self, mock_get_data):
+        """
+        Tests that load_data gracefully returns None when the underlying cache returns None.
+        """
+        from utils import load_data
+
+        ticker = "INVALID"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 12, 31)
+
+        mock_get_data.return_value = None
+
+        result = load_data(ticker, start_date, end_date)
+
+        mock_get_data.assert_called_once_with(ticker, start_date, end_date)
+        self.assertIsNone(result)
+
 if __name__ == '__main__':
     unittest.main()
