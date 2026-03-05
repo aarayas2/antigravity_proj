@@ -396,3 +396,12 @@ class TestJsonStatsStorageWrite:
 
         # Original file should remain uncorrupted (as an empty list since it was initialized)
         assert storage.read() == []
+
+    def test_write_os_replace_error_temp_cleanup_explicit(self, tmp_path):
+        file_path = tmp_path / "stats_error.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"TICKER": {"date-begin": "2023-01-01", "date-end": "2023-12-31"}}]
+        with patch("os.replace", side_effect=Exception("Mocked error")):
+            with pytest.raises(Exception, match="Mocked error"):
+                storage.write(data)
+        assert not os.path.exists(str(file_path) + '.tmp')
