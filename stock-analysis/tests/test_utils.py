@@ -607,5 +607,22 @@ class TestStockDataCache(unittest.TestCase):
         mock_download.assert_called_once_with(ticker, start=start_date, end=end_date)
         self.assertIsNone(result)
 
+class TestLoadDataWrapper(unittest.TestCase):
+    @patch('utils._cache.get_data')
+    def test_load_data_delegates_to_cache(self, mock_get_data):
+        from utils import load_data
+
+        expected_df = pd.DataFrame({'Close': [100.0, 105.0]})
+        mock_get_data.return_value = expected_df
+
+        ticker = "MSFT"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 10)
+
+        result = load_data(ticker, start_date, end_date)
+
+        mock_get_data.assert_called_once_with(ticker, start_date, end_date)
+        pd.testing.assert_frame_equal(result, expected_df)
+
 if __name__ == '__main__':
     unittest.main()
