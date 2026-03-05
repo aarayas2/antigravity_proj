@@ -95,8 +95,8 @@ def test_bollinger_bands_get_signals_no_signal_column():
 
     assert isinstance(buy_signals, pd.DataFrame)
     assert isinstance(sell_signals, pd.DataFrame)
-    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame())
-    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty if 'Signal' column is missing.")
+    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame(), obj="Sell signals should be empty if 'Signal' column is missing.")
 
 def test_bollinger_bands_get_signals_empty_df():
     df = pd.DataFrame()
@@ -105,8 +105,22 @@ def test_bollinger_bands_get_signals_empty_df():
 
     assert isinstance(buy_signals, pd.DataFrame)
     assert isinstance(sell_signals, pd.DataFrame)
-    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame())
-    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty for an empty DataFrame.")
+    pd.testing.assert_frame_equal(sell_signals, pd.DataFrame(), obj="Sell signals should be empty for an empty DataFrame.")
+
+def test_bollinger_bands_get_signals_all_zero():
+    dates = pd.date_range(start="2023-01-01", periods=3)
+    df = pd.DataFrame({
+        'Close': [100.0, 105.0, 95.0],
+        'Signal': [0.0, 0.0, 0.0]
+    }, index=dates)
+
+    buy_signals, sell_signals = get_signals(df)
+
+    assert isinstance(buy_signals, pd.DataFrame)
+    assert isinstance(sell_signals, pd.DataFrame)
+    assert len(buy_signals) == 0, "Buy signals should be empty if there are no 1.0 signals."
+    assert len(sell_signals) == 0, "Sell signals should be empty if there are no -1.0 signals."
 
 from strategy.BollingerBands import needs_subplots, add_traces
 from unittest.mock import MagicMock
