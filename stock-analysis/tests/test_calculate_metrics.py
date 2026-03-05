@@ -245,5 +245,45 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
+
+class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
+    def test_calculate_metrics_with_nan_values(self):
+        """Test how backtesting handles NaN in Close or Position."""
+        dates = pd.date_range('2024-01-01', periods=3)
+        df = pd.DataFrame({
+            'Close': [100.0, np.nan, 150.0],
+            'Position': [1.0, 0.0, -1.0]
+        }, index=dates)
+
+        # Position is 1.0, so buy at 100.0 -> 100 shares.
+        # Position is 0.0 at NaN, so it does nothing.
+        # Position is -1.0, so sell at 150.0 -> 100 shares sold.
+        result = calculate_metrics(df, "dummy")
+
+        self.assertEqual(result['Number of Trades'], 1)
+        self.assertEqual(result['Total Return'], '50.00%')
+
+    def test_calculate_metrics_empty_active_df_but_valid(self):
+        """Test when the DataFrame is valid but has no active positions, ensuring it doesn't crash."""
+        dates = pd.date_range('2024-01-01', periods=2)
+        df = pd.DataFrame({
+            'Close': [100.0, 100.0],
+            'Position': [0.0, 0.0]
+        }, index=dates)
+        result = calculate_metrics(df, "dummy")
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Total Return'], '0.00%')
+
+    def test_calculate_metrics_string_strategy_is_ignored(self):
+        """Ensure the strategy string parameter doesn't alter the simple metric calculation."""
+        dates = pd.date_range('2024-01-01', periods=2)
+        df = pd.DataFrame({
+            'Close': [100.0, 200.0],
+            'Position': [1.0, -1.0]
+        }, index=dates)
+        result1 = calculate_metrics(df, "StrategyA")
+        result2 = calculate_metrics(df, "StrategyB")
+        self.assertEqual(result1, result2)
+        self.assertEqual(result1['Total Return'], '100.00%')
 if __name__ == '__main__':
     unittest.main()
