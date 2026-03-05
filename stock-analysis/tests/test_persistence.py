@@ -628,3 +628,21 @@ class TestJsonStatsStorageReadAdditionalTests:
         with open(file_path, "w") as f:
             json.dump(data, f)
         assert storage.read() == data
+
+def test_json_stats_storage_write_exception_path(tmp_path):
+    """
+    Missing error path test for JsonStatsStorage write method
+    Testing the exception block requires mocking os.replace to raise an error
+    and verifying the temp file cleanup, taking under 20 lines of code.
+    """
+    file_path = tmp_path / "test_write_err.json"
+    storage = JsonStatsStorage(str(file_path))
+    data = [{"TICKER": {"date-begin": "2023-01-01"}}]
+
+    with patch('os.replace', side_effect=OSError("Mocked error during replace")):
+        with pytest.raises(OSError, match="Mocked error during replace"):
+            storage.write(data)
+
+    # Verify the temporary file cleanup occurred in the exception block
+    temp_path = str(file_path) + '.tmp'
+    assert not os.path.exists(temp_path)
