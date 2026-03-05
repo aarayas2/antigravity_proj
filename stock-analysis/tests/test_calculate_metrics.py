@@ -245,7 +245,6 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
-
 class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
     def test_calculate_metrics_with_nan_values(self):
         """Test how backtesting handles NaN in Close or Position."""
@@ -285,5 +284,6 @@ class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
         result2 = calculate_metrics(df, "StrategyB")
         self.assertEqual(result1, result2)
         self.assertEqual(result1['Total Return'], '100.00%')
+
 if __name__ == '__main__':
     unittest.main()
