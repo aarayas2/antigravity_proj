@@ -24,7 +24,7 @@ class StockDataCache:
         final_path = os.path.abspath(os.path.join(self.data_dir, f"{sanitized_ticker}.json"))
 
         # Ensure the final path is strictly within the data_dir
-        if not final_path.startswith(os.path.abspath(self.data_dir)):
+        if not final_path.startswith(os.path.abspath(self.data_dir) + os.sep):
             raise ValueError(f"Invalid ticker format: Potential path traversal detected for '{ticker}'.")
 
         return final_path
