@@ -51,9 +51,8 @@ def test_get_signals_no_signal_column():
     buy_signals, sell_signals = get_signals(df)
 
     assert isinstance(buy_signals, pd.DataFrame), "Buy signals should be a DataFrame."
-    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty if 'Signal' column is missing.")
-
     assert isinstance(sell_signals, pd.DataFrame), "Sell signals should be a DataFrame."
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty if 'Signal' column is missing.")
     pd.testing.assert_frame_equal(sell_signals, pd.DataFrame(), obj="Sell signals should be empty if 'Signal' column is missing.")
 
 def test_get_signals_with_signal_column():
@@ -76,9 +75,8 @@ def test_get_signals_empty_df():
     buy_signals, sell_signals = get_signals(df)
 
     assert isinstance(buy_signals, pd.DataFrame), "Buy signals should be a DataFrame."
-    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty for an empty DataFrame.")
-
     assert isinstance(sell_signals, pd.DataFrame), "Sell signals should be a DataFrame."
+    pd.testing.assert_frame_equal(buy_signals, pd.DataFrame(), obj="Buy signals should be empty for an empty DataFrame.")
     pd.testing.assert_frame_equal(sell_signals, pd.DataFrame(), obj="Sell signals should be empty for an empty DataFrame.")
 
 def test_apply_strategy_with_mock_df():
