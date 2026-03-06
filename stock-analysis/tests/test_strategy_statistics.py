@@ -61,15 +61,15 @@ class TestStrategyStatistics(unittest.TestCase):
         table = update_stats_table(0)
         
         # Test the update_tickers_input function
-        # Provide the table's data, mimicking the initial state when derived_virtual_data is None
-        unique_tickers = update_tickers_input(None, table.data)
+        # Provide the table's data, mimicking the initial state when virtualRowData is None
+        unique_tickers = update_tickers_input(None, getattr(table, 'rowData', None))
 
         # Expected result maintains the order of first appearance: TICKER_B, TICKER_A, TICKER_C
         # Ticker B should only appear once despite having multiple entries
         self.assertEqual(unique_tickers, "TICKER_B;TICKER_A;TICKER_C")
 
     def test_update_tickers_input_with_virtual_data(self):
-        # When table is sorted or filtered, derived_virtual_data is populated and used
+        # When table is sorted or filtered, virtualRowData is populated and used
         virtual_data = [
             {"Ticker": "TICKER_C"},
             {"Ticker": "TICKER_A"},

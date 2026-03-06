@@ -1,8 +1,7 @@
 import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
-from dash import dash_table
-from dash.dash_table.Format import Format, Scheme
+import dash_ag_grid as dag
 import pandas as pd
 from utils import stats_manager
 
@@ -86,42 +85,36 @@ def update_stats_table(min_win_rate):
     if not rows:
         return html.Div([
             dbc.Alert("No data available or no strategies meet the filter criteria.", color="info"),
-            # Empty table required so the derived_virtual_data callback doesn't fail on missing ID
-            dash_table.DataTable(id='stats-table', data=[])
+            # Empty table required so the virtualRowData callback doesn't fail on missing ID
+            dag.AgGrid(id='stats-table', rowData=[], columnDefs=[])
         ])
 
     df = pd.DataFrame(rows)
 
-    table = dash_table.DataTable(
+    columnDefs = [
+        {"field": "Ticker"},
+        {"field": "Date Begin"},
+        {"field": "Date End"},
+        {"field": "Strategy"},
+        {"field": "Total Return"},
+        {
+            "field": "Average Return",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"}
+        },
+        {"field": "Number of Trades"},
+        {
+            "field": "Win Rate",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"}
+        }
+    ]
+
+    table = dag.AgGrid(
         id='stats-table',
-        data=df.to_dict('records'),
-        columns=[
-            {"name": "Ticker", "id": "Ticker"},
-            {"name": "Date Begin", "id": "Date Begin"},
-            {"name": "Date End", "id": "Date End"},
-            {"name": "Strategy", "id": "Strategy"},
-            {"name": "Total Return", "id": "Total Return"},
-            {"name": "Average Return", "id": "Average Return", "type": "numeric", "format": Format(precision=2, scheme=Scheme.percentage)},
-            {"name": "Number of Trades", "id": "Number of Trades"},
-            {"name": "Win Rate", "id": "Win Rate", "type": "numeric", "format": Format(precision=2, scheme=Scheme.percentage)}
-        ],
-        sort_action='native',
-        style_table={'overflowX': 'auto'},
-        style_header={
-            'backgroundColor': '#343a40',
-            'color': 'white',
-            'fontWeight': 'bold'
-        },
-        style_data={
-            'backgroundColor': '#2c3e50',
-            'color': 'white'
-        },
-        style_data_conditional=[
-            {
-                'if': {'row_index': 'odd'},
-                'backgroundColor': '#34495e'
-            }
-        ]
+        rowData=df.to_dict('records'),
+        columnDefs=columnDefs,
+        dashGridOptions={"defaultColDef": {"sortable": True}},
+        className="ag-theme-alpine",
+        style={"height": 500, "width": "100%"},
     )
 
     return table
@@ -129,17 +122,17 @@ def update_stats_table(min_win_rate):
 
 @callback(
     Output('tickers-input', 'value'),
-    Input('stats-table', 'derived_virtual_data'),
-    Input('stats-table', 'data')
+    Input('stats-table', 'virtualRowData'),
+    Input('stats-table', 'rowData')
 )
-def update_tickers_input(derived_virtual_data, data):
+def update_tickers_input(virtualRowData, rowData):
     """
     Updates the tickers input field based on the currently visible 
     and sorted rows in the data table.
     """
-    # derived_virtual_data is None when the table is first initialized or not sorted/filtered.
-    # We fallback to the full data if derived_virtual_data is not available.
-    current_data = derived_virtual_data if derived_virtual_data is not None else data
+    # virtualRowData is None when the table is first initialized or not sorted/filtered.
+    # We fallback to the full data if virtualRowData is not available.
+    current_data = virtualRowData if virtualRowData is not None else rowData
     
     if not current_data:
         return ""

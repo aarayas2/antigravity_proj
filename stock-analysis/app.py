@@ -15,6 +15,7 @@ from pages.strategy_chart import layout as strategy_chart_layout
 from pages.strategy_chart import run_analysis_for_ticker
 from pages.strategy_statistics import layout as strategy_statistics_layout
 
+
 # Dash App Initialization
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.DARKLY], suppress_callback_exceptions=True)
 server = app.server
