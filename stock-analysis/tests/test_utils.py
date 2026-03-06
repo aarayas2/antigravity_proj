@@ -757,5 +757,39 @@ class TestStockDataCachePathTraversal(unittest.TestCase):
                 mock_abspath.side_effect = ["/outside/path", "/correct/data/dir"]
                 cache._get_file_path("dummy")
 
+class TestLoadDataMissingTests(unittest.TestCase):
+    @patch('yfinance.download')
+    @patch('utils.StockDataCache.get_data')
+    def test_load_data_success(self, mock_get_data, mock_download):
+        from utils import load_data
+
+        ticker = "TSLA"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 31)
+
+        expected_df = pd.DataFrame({'Close': [200.0, 210.0]})
+        mock_get_data.return_value = expected_df
+
+        result = load_data(ticker, start_date, end_date)
+
+        mock_get_data.assert_called_once_with(ticker, start_date, end_date)
+        pd.testing.assert_frame_equal(result, expected_df)
+
+    @patch('yfinance.download')
+    @patch('utils.StockDataCache.get_data')
+    def test_load_data_none(self, mock_get_data, mock_download):
+        from utils import load_data
+
+        ticker = "INVALID"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 31)
+
+        mock_get_data.return_value = None
+
+        result = load_data(ticker, start_date, end_date)
+
+        mock_get_data.assert_called_once_with(ticker, start_date, end_date)
+        self.assertIsNone(result)
+
 if __name__ == '__main__':
     unittest.main()
