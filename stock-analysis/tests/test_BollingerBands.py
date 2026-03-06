@@ -172,3 +172,17 @@ def test_add_traces_no_bbands():
     add_traces(fig, df, main_row=1, sub_row=None)
 
     assert fig.add_trace.call_count == 0
+
+def test_apply_strategy_with_mock_df():
+    """Apply pandas-ta indicators to a mock dataframe and assert output shape and signals."""
+    # Create a mock dataframe with > 20 rows to allow pandas_ta to compute actual indicators
+    df = pd.DataFrame({'Close': [10] * 19 + [5, 15]})
+    result = apply_strategy(df)
+
+    # Assert the output shape: 21 rows, 8 columns (Close, BBL, BBM, BBU, BBB, BBP, Signal, Position)
+    assert result.shape == (21, 8)
+
+    # Assert signals: row 19 (index 19) dropped to 5 -> Buy (1.0)
+    # row 20 (index 20) spiked to 15 -> Sell (-1.0)
+    assert result['Signal'].iloc[19] == 1.0
+    assert result['Signal'].iloc[20] == -1.0
