@@ -762,3 +762,33 @@ class TestJsonStatsStorageReadMissingCoverage:
         with open(file_path, "w") as f:
             json.dump({"not": "a list"}, f)
         assert storage.read() == []
+
+class TestJsonStatsStorageReadMethodIssueNew:
+    def test_read_returns_valid_data_on_success_with_tmp_path(self, tmp_path):
+        file_path = tmp_path / "data.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"TEST": {"metric": 1}}]
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+        assert storage.read() == data
+
+    def test_read_returns_empty_list_when_file_does_not_exist_with_tmp_path(self, tmp_path):
+        file_path = tmp_path / "missing.json"
+        storage = JsonStatsStorage(str(file_path))
+        if os.path.exists(str(file_path)):
+            os.remove(str(file_path))
+        assert storage.read() == []
+
+    def test_read_returns_empty_list_on_invalid_json_with_tmp_path(self, tmp_path):
+        file_path = tmp_path / "invalid.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            f.write("{invalid json")
+        assert storage.read() == []
+
+    def test_read_returns_empty_list_on_non_list_data_with_tmp_path(self, tmp_path):
+        file_path = tmp_path / "non_list.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            json.dump({"not": "a list"}, f)
+        assert storage.read() == []
