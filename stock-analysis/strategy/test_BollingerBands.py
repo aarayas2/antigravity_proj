@@ -191,3 +191,19 @@ def test_get_signals_missing_signal_column():
     # Rationale states we must assert returned are indeed empty (using assert_frame_equal)
     pd.testing.assert_frame_equal(buy_signals, pd.DataFrame())
     pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
+
+def test_apply_strategy_with_mock_df_15_lines():
+    """Applying pandas-ta indicators to a mock dataframe and asserting the output shape and signals."""
+    import pandas_ta
+    # Need 20 rows for Bollinger Bands length=20, plus a few more to trigger signals
+    df = pd.DataFrame({'Close': [10.0]*19 + [5.0, 15.0]})
+
+    result = apply_strategy(df)
+
+    # Check shape: 21 rows, 8 columns (Close, BBL, BBM, BBU, BBB, BBP, Signal, Position)
+    assert result.shape == (21, 8), f"Expected shape (21, 8), got {result.shape}"
+
+    # Check signals: row 19 (index 19) drops to 5 -> Buy (1.0)
+    # row 20 (index 20) spikes to 15 -> Sell (-1.0)
+    assert result['Signal'].iloc[19] == 1.0, "Expected buy signal on price drop below lower band."
+    assert result['Signal'].iloc[20] == -1.0, "Expected sell signal on price spike above upper band."
