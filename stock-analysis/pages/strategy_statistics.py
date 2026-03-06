@@ -113,8 +113,20 @@ def update_stats_table(min_win_rate):
         rowData=df.to_dict('records'),
         columnDefs=columnDefs,
         dashGridOptions={"defaultColDef": {"sortable": True}},
-        className="ag-theme-alpine",
+        className="ag-theme-quartz-dark",
         style={"height": 500, "width": "100%"},
+        getRowStyle={
+            "styleConditions": [
+                {
+                    "condition": "params.node.rowIndex % 2 === 0",
+                    "style": {"backgroundColor": "#222222", "color": "#f8f9fa"}
+                },
+                {
+                    "condition": "params.node.rowIndex % 2 !== 0",
+                    "style": {"backgroundColor": "#333333", "color": "#f8f9fa"}
+                }
+            ]
+        }
     )
 
     return table

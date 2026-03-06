@@ -20,3 +20,38 @@
 #win-rate-slider .rc-slider-mark-text {
     white-space: nowrap;
 }
+
+/* Zebra striping for ag-theme-quartz-dark */
+.ag-theme-quartz-dark .row-even {
+    background-color: #222222 !important;
+}
+.ag-theme-quartz-dark .row-odd {
+    background-color: #333333 !important;
+}
+
+/* Fix zebra striping for ag-theme-quartz-dark */
+.ag-theme-quartz-dark {
+    --ag-odd-row-background-color: #333333;
+    --ag-row-background-color: #222222;
+}
+
+/* AgGrid styling to enforce zebra striping */
+.ag-theme-quartz-dark {
+    --ag-odd-row-background-color: #2b2b2b;
+    --ag-row-background-color: #1e1e1e;
+    --ag-header-background-color: #333333;
+    --ag-background-color: #1e1e1e;
+}
+
+/* AgGrid Header color fix for dark mode */
+.ag-theme-quartz-dark .ag-header {
+    background-color: #333333 !important;
+}
+.ag-theme-quartz-dark .ag-header-cell {
+    color: #f8f9fa !important;
+}
+
+/* AgGrid Text color fix for dark mode */
+.ag-theme-quartz-dark {
+    --ag-foreground-color: #f8f9fa;
+}
