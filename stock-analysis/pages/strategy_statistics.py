@@ -39,10 +39,13 @@ layout = html.Div([
 
 @callback(
     Output('stats-table-container', 'children'),
-    Output('tickers-input', 'value'),
     Input('win-rate-slider', 'value')
 )
 def update_stats_table(min_win_rate):
+    """
+    Reads strategy statistics, filters by the minimum win rate, 
+    and returns a formatted, sortable Dash DataTable.
+    """
     data = stats_manager._storage.read()
 
     rows = []
@@ -81,13 +84,16 @@ def update_stats_table(min_win_rate):
                     })
 
     if not rows:
-        return dbc.Alert("No data available or no strategies meet the filter criteria.", color="info"), ""
-
-    unique_tickers = ";".join(list(dict.fromkeys(row["Ticker"] for row in rows)))
+        return html.Div([
+            dbc.Alert("No data available or no strategies meet the filter criteria.", color="info"),
+            # Empty table required so the derived_virtual_data callback doesn't fail on missing ID
+            dash_table.DataTable(id='stats-table', data=[])
+        ])
 
     df = pd.DataFrame(rows)
 
     table = dash_table.DataTable(
+        id='stats-table',
         data=df.to_dict('records'),
         columns=[
             {"name": "Ticker", "id": "Ticker"},
@@ -118,4 +124,25 @@ def update_stats_table(min_win_rate):
         ]
     )
 
-    return table, unique_tickers
+    return table
+
+
+@callback(
+    Output('tickers-input', 'value'),
+    Input('stats-table', 'derived_virtual_data'),
+    Input('stats-table', 'data')
+)
+def update_tickers_input(derived_virtual_data, data):
+    """
+    Updates the tickers input field based on the currently visible 
+    and sorted rows in the data table.
+    """
+    # derived_virtual_data is None when the table is first initialized or not sorted/filtered.
+    # We fallback to the full data if derived_virtual_data is not available.
+    current_data = derived_virtual_data if derived_virtual_data is not None else data
+    
+    if not current_data:
+        return ""
+        
+    unique_tickers = ";".join(list(dict.fromkeys(row.get("Ticker", "") for row in current_data if row.get("Ticker"))))
+    return unique_tickers
