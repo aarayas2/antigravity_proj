@@ -21,7 +21,7 @@ layout = html.Div([
             )
         ], md=6),
         dbc.Col([
-            dbc.Label("Unique Tickers"),
+            dbc.Label("Tickers"),
             dbc.InputGroup([
                 dbc.Input(id="tickers-input", type="text", readonly=True),
                 dbc.InputGroupText(
