@@ -73,13 +73,13 @@ def update_stats_table(min_win_rate):
                         
                     rows.append({
                         "Ticker": ticker,
-                        "Date Begin": date_begin,
-                        "Date End": date_end,
                         "Strategy": strategy,
                         "Total Return": metrics.get('Total Return', 'N/A'),
                         "Average Return": avg_return_val,
                         "Number of Trades": metrics.get('Number of Trades', 'N/A'),
-                        "Win Rate": win_rate_val
+                        "Win Rate": win_rate_val,
+                        "Date Begin": date_begin,
+                        "Date End": date_end
                     })
 
     if not rows:
@@ -93,8 +93,6 @@ def update_stats_table(min_win_rate):
 
     columnDefs = [
         {"field": "Ticker"},
-        {"field": "Date Begin"},
-        {"field": "Date End"},
         {"field": "Strategy"},
         {"field": "Total Return"},
         {
@@ -105,7 +103,9 @@ def update_stats_table(min_win_rate):
         {
             "field": "Win Rate",
             "valueFormatter": {"function": "d3.format('.2%')(params.value)"}
-        }
+        },
+        {"field": "Date Begin"},
+        {"field": "Date End"}
     ]
 
     table = dag.AgGrid(
