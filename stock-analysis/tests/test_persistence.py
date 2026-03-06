@@ -694,3 +694,37 @@ class TestJsonStatsStorageReadMethodIssue:
         storage = JsonStatsStorage(str(file_path))
         file_path.touch()
         assert storage.read() == []
+
+class TestJsonStatsStorageReadMissingTests:
+    """
+    Tests for JsonStatsStorage read method to assert empty lists are returned on failure
+    and valid data is returned on success. Added as requested.
+    """
+    def test_read_success_valid_data(self, tmp_path):
+        file_path = tmp_path / "valid.json"
+        storage = JsonStatsStorage(str(file_path))
+        data = [{"TEST": {"metric": 1}}]
+        with open(file_path, "w") as f:
+            json.dump(data, f)
+        assert storage.read() == data
+
+    def test_read_failure_file_missing(self, tmp_path):
+        file_path = tmp_path / "missing.json"
+        storage = JsonStatsStorage(str(file_path))
+        if os.path.exists(str(file_path)):
+            os.remove(str(file_path))
+        assert storage.read() == []
+
+    def test_read_failure_malformed_json(self, tmp_path):
+        file_path = tmp_path / "malformed.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            f.write("{invalid json")
+        assert storage.read() == []
+
+    def test_read_failure_non_list_type(self, tmp_path):
+        file_path = tmp_path / "non_list.json"
+        storage = JsonStatsStorage(str(file_path))
+        with open(file_path, "w") as f:
+            json.dump({"not": "a list"}, f)
+        assert storage.read() == []
