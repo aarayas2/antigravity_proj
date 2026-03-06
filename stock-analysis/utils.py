@@ -171,14 +171,15 @@ class _TradeEvaluator:
             self.capital += self.position_size * exit_price
             self.trades_history.append(_create_trade_record(self.buy_date, exit_date, self.buy_price, exit_price))
 
-def _evaluate_trade_sequence(dates, prices, positions, initial_capital, exit_date, exit_price):
+def _evaluate_trade_sequence(df, initial_capital, exit_date, exit_price):
     evaluator = _TradeEvaluator(initial_capital)
 
-    for date, price, pos in zip(dates, prices, positions):
-        if pos == 1.0:
-            evaluator.process_buy(date, price)
-        elif pos == -1.0:
-            evaluator.process_sell(date, price)
+    # Use itertuples for a substantial speedup over explicit iteration with .iloc
+    for row in df.itertuples():
+        if row.Position == 1.0:
+            evaluator.process_buy(row.Index, row.Close)
+        elif row.Position == -1.0:
+            evaluator.process_sell(row.Index, row.Close)
 
     evaluator.close_open_position(exit_date, exit_price)
 
@@ -225,12 +226,8 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
     active_df = df[df['Position'] != 0.0]
 
     # Extremely simplified backtest loop just for display metrics
-    dates = active_df.index
-    prices = active_df['Close'].to_numpy()
-    positions = active_df['Position'].to_numpy()
-
     final_capital, trades_history = _evaluate_trade_sequence(
-        dates, prices, positions, initial_capital, exit_date, exit_price
+        active_df, initial_capital, exit_date, exit_price
     )
 
     return _compile_performance_metrics(initial_capital, final_capital, trades_history)
