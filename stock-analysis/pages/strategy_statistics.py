@@ -19,13 +19,27 @@ layout = html.Div([
                 value=50,
                 marks={i: f'{i}%' for i in range(0, 101, 10)}
             )
-        ], md=6)
+        ], md=6),
+        dbc.Col([
+            dbc.Label("Unique Tickers"),
+            dbc.InputGroup([
+                dbc.Input(id="unique-tickers-input", type="text", readonly=True),
+                dbc.InputGroupText(
+                    dcc.Clipboard(
+                        target_id="unique-tickers-input",
+                        title="Copy to clipboard",
+                        style={"cursor": "pointer"}
+                    )
+                )
+            ])
+        ], md=6)        
     ], className="mb-4"),
     html.Div(id='stats-table-container')
 ])
 
 @callback(
     Output('stats-table-container', 'children'),
+    Output('unique-tickers-input', 'value'),
     Input('win-rate-slider', 'value')
 )
 def update_stats_table(min_win_rate):
@@ -67,7 +81,9 @@ def update_stats_table(min_win_rate):
                     })
 
     if not rows:
-        return dbc.Alert("No data available or no strategies meet the filter criteria.", color="info")
+        return dbc.Alert("No data available or no strategies meet the filter criteria.", color="info"), ""
+
+    unique_tickers = ";".join(sorted(list(set(row["Ticker"] for row in rows))))
 
     df = pd.DataFrame(rows)
 
@@ -102,4 +118,4 @@ def update_stats_table(min_win_rate):
         ]
     )
 
-    return table
+    return table, unique_tickers
