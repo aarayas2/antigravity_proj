@@ -114,7 +114,7 @@ def update_stats_table(min_win_rate):
         columnDefs=columnDefs,
         dashGridOptions={"defaultColDef": {"sortable": True}},
         className="ag-theme-quartz-dark",
-        style={"height": 2000, "width": "100%"},
+        style={"height": 4000, "width": "100%"},
         getRowStyle={
             "styleConditions": [
                 {
