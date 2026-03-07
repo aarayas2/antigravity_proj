@@ -108,13 +108,16 @@ def update_stats_table(min_win_rate):
         {"field": "Date End"}
     ]
 
+    row_data = df.to_dict('records')
+    dynamic_height = min(1200, 50 + len(row_data) * 50)
+
     table = dag.AgGrid(
         id='stats-table',
-        rowData=df.to_dict('records'),
+        rowData=row_data,
         columnDefs=columnDefs,
         dashGridOptions={"defaultColDef": {"sortable": True}},
         className="ag-theme-quartz-dark",
-        style={"height": 4000, "width": "100%"},
+        style={"height": dynamic_height, "width": "100%"},
         getRowStyle={
             "styleConditions": [
                 {
