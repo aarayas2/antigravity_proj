@@ -93,7 +93,7 @@ class StockDataCache:
             cached_df = self._handle_cache_miss(ticker, start_date, end_date, file_path)
         else:
             first_cached_date = cached_df.index.min().date()
-            last_cached_date = cached_df.index.max().date()
+            last_cached_date = cached_df.index.max().date() - datetime.timedelta(days=1)
 
             if start_date >= first_cached_date and end_date <= last_cached_date:
                 cached_df = self._handle_cache_hit(ticker, cached_df)
