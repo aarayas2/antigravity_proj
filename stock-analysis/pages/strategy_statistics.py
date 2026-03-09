@@ -5,36 +5,37 @@ import dash_ag_grid as dag
 import pandas as pd
 from utils import stats_manager
 
-layout = html.Div([
-    html.H2("Strategy Statistics", className="mb-4"),
-    dbc.Row([
-        dbc.Col([
-            dbc.Label("Minimum Win Rate Filter (%)"),
-            dcc.Slider(
-                id='win-rate-slider',
-                min=0,
-                max=100,
-                step=5,
-                value=50,
-                marks={i: f'{i}%' for i in range(0, 101, 10)}
-            )
-        ], md=6),
-        dbc.Col([
-            dbc.Label("Tickers"),
-            dbc.InputGroup([
-                dbc.Input(id="tickers-input", type="text", readonly=True),
-                dbc.InputGroupText(
-                    dcc.Clipboard(
-                        target_id="tickers-input",
-                        title="Copy to clipboard",
-                        style={"cursor": "pointer"}
-                    )
+def layout():
+    return html.Div([
+        html.H2("Strategy Statistics", className="mb-4"),
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Minimum Win Rate Filter (%)"),
+                dcc.Slider(
+                    id='win-rate-slider',
+                    min=0,
+                    max=100,
+                    step=5,
+                    value=50,
+                    marks={i: f'{i}%' for i in range(0, 101, 10)}
                 )
-            ])
-        ], md=6)        
-    ], className="mb-4"),
-    html.Div(id='stats-table-container')
-])
+            ], md=6),
+            dbc.Col([
+                dbc.Label("Tickers"),
+                dbc.InputGroup([
+                    dbc.Input(id="tickers-input", type="text", readonly=True),
+                    dbc.InputGroupText(
+                        dcc.Clipboard(
+                            target_id="tickers-input",
+                            title="Copy to clipboard",
+                            style={"cursor": "pointer"}
+                        )
+                    )
+                ])
+            ], md=6)        
+        ], className="mb-4"),
+        html.Div(id='stats-table-container')
+    ])
 
 @callback(
     Output('stats-table-container', 'children'),

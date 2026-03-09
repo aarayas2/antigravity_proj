@@ -5,7 +5,7 @@ import datetime
 import concurrent.futures
 
 from utils import load_data, apply_strategy, calculate_metrics, stats_manager
-from utils import max_date, min_date, default_start, max_date_ord, min_date_ord, default_start_ord, step_ord
+from utils import get_date_ranges
 from strategy import STRATEGIES
 from charting import create_strategy_chart
 
@@ -90,52 +90,55 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
 
     return {"metrics": strategies_metrics, "sections": output_sections, "buy_signals": buy_signals}
 
-layout = html.Div([
-    dcc.Store(id='mru-store', storage_type='local', data=[]),
-    html.Datalist(id='mru-tickers'),
+def layout():
+    date_ranges = get_date_ranges()
     
-    dbc.Row([
-        dbc.Col([
-            dbc.Label("Stock Ticker Symbol"),
-            dbc.Input(
-                id="ticker-input", 
-                type="text", 
-                value="AAPL", 
-                style={'textTransform': 'uppercase'},
-                list="mru-tickers",
-                autocomplete="off",
-                debounce=False # Allow 'n_submit' to work smoothly
-            )
-        ], md=4),
+    return html.Div([
+        dcc.Store(id='mru-store', storage_type='local', data=[]),
+        html.Datalist(id='mru-tickers'),
         
-        dbc.Col([
-            dbc.Label(id="date-range-label", children="Date Range"),
-            html.Div([
-                dcc.RangeSlider(
-                    id='date-range-slider',
-                    min=min_date_ord,
-                    max=max_date_ord,
-                    step=step_ord,
-                    value=[default_start_ord, max_date_ord],
-                    marks={
-                        min_date_ord: min_date.strftime('%Y-%m-%d'),
-                        max_date_ord: max_date.strftime('%Y-%m-%d')
-                    },
-                    updatemode='drag'
+        dbc.Row([
+            dbc.Col([
+                dbc.Label("Stock Ticker Symbol"),
+                dbc.Input(
+                    id="ticker-input", 
+                    type="text", 
+                    value="AAPL", 
+                    style={'textTransform': 'uppercase'},
+                    list="mru-tickers",
+                    autocomplete="off",
+                    debounce=False # Allow 'n_submit' to work smoothly
                 )
-            ], style={'padding-top': '10px'})
-        ], md=6),
-        
-        dbc.Col([
-            dbc.Label("\u00A0"), # Non-breaking space for alignment
-            dbc.Button("Compute Analysis", id="compute-btn", color="primary", className="w-100", n_clicks=0)
-        ], md=2)
-    ], className="mb-4 align-items-end"),
+            ], md=4),
+            
+            dbc.Col([
+                dbc.Label(id="date-range-label", children="Date Range"),
+                html.Div([
+                    dcc.RangeSlider(
+                        id='date-range-slider',
+                        min=date_ranges['min_date_ord'],
+                        max=date_ranges['max_date_ord'],
+                        step=date_ranges['step_ord'],
+                        value=[date_ranges['default_start_ord'], date_ranges['max_date_ord']],
+                        marks={
+                            date_ranges['min_date_ord']: date_ranges['min_date'].strftime('%Y-%m-%d'),
+                            date_ranges['max_date_ord']: date_ranges['max_date'].strftime('%Y-%m-%d')
+                        },
+                        updatemode='drag'
+                    )
+                ], style={'padding-top': '10px'})
+            ], md=6),
+            
+            dbc.Col([
+                dbc.Label("\u00A0"), # Non-breaking space for alignment
+                dbc.Button("Compute Analysis", id="compute-btn", color="primary", className="w-100", n_clicks=0)
+            ], md=2)
+        ], className="mb-4 align-items-end"),
 
-    dbc.Spinner(
-        html.Div(id="output-container")
-    )
-])
+        dbc.Spinner(
+            html.Div(id="output-container")
+        )
+    ])
 
 @callback(
     Output("date-range-label", "children"),
@@ -192,7 +195,8 @@ def update_analysis(n_clicks, n_submit, ticker, date_range, mru_data):
     strategies_metrics = result["metrics"]
 
     # Trigger save logic if on Maximum date range
-    if date_range[0] == min_date_ord and date_range[1] == max_date_ord:
+    date_ranges = get_date_ranges()
+    if date_range[0] == date_ranges['min_date_ord'] and date_range[1] == date_ranges['max_date_ord']:
         date_begin_str = start_date_obj.strftime('%Y-%m-%d')
         date_end_str = end_date_obj.strftime('%Y-%m-%d')
         stats_manager.save_stats(ticker, date_begin_str, date_end_str, strategies_metrics)

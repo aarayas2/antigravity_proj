@@ -8,7 +8,7 @@ import os
 # Ensure pages directory and current directory are in path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from utils import stats_manager, max_date, min_date
+from utils import stats_manager, get_date_ranges
 
 # Import layout and components after persistence is initialized
 from pages.strategy_chart import layout as strategy_chart_layout
@@ -32,8 +32,9 @@ def run_batch_mode(tickers_str: str):
         return
 
     # Use max_date and min_date as defined for the full range (slider max/min)
-    end_date_obj = max_date
-    start_date_obj = min_date
+    date_ranges = get_date_ranges()
+    end_date_obj = date_ranges["max_date"]
+    start_date_obj = date_ranges["min_date"]
     
     print(f"Starting batch analysis for {len(tickers)} ticker(s) from {start_date_obj} to {end_date_obj}...")
     
@@ -90,9 +91,9 @@ app.layout = dbc.Container([
 )
 def display_page(pathname):
     if pathname == '/stats':
-        return strategy_statistics_layout
+        return strategy_statistics_layout() if callable(strategy_statistics_layout) else strategy_statistics_layout
     else:
-        return strategy_chart_layout
+        return strategy_chart_layout() if callable(strategy_chart_layout) else strategy_chart_layout
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Stock Analysis App")

@@ -248,13 +248,18 @@ DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STATS_FILE = os.path.join(DATA_DIR, "stats.json")
 stats_manager = StatsManager(JsonStatsStorage(STATS_FILE))
 
-# Default dates
-max_date = datetime.date.today()
-min_date = max_date - datetime.timedelta(days=365 * 5)
-default_start = max_date - datetime.timedelta(days=365)
+# Date helpers
+def get_date_ranges():
+    max_date = datetime.date.today()
+    min_date = max_date - datetime.timedelta(days=365 * 5)
+    default_start = max_date - datetime.timedelta(days=365)
 
-# Convert dates to ordinal for slider
-min_date_ord = min_date.toordinal()
-max_date_ord = max_date.toordinal()
-default_start_ord = default_start.toordinal()
-step_ord = 180 # ~6 months interval
+    return {
+        "max_date": max_date,
+        "min_date": min_date,
+        "default_start": default_start,
+        "min_date_ord": min_date.toordinal(),
+        "max_date_ord": max_date.toordinal(),
+        "default_start_ord": default_start.toordinal(),
+        "step_ord": 180 # ~6 months interval
+    }
