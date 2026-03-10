@@ -108,6 +108,11 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.ticker:
-        run_batch_mode(args.ticker)
+        results = run_batch_mode(args.ticker)
+        if results:
+            print("\n--- Buy Zone Signals ---")
+            for strategy, tickers_list in results.items():
+                tickers_str = "; ".join(tickers_list)
+                print(f"{strategy}: {tickers_str}")
     else:
         app.run(debug=False, port=8050)
