@@ -61,10 +61,17 @@ def run_batch_mode(tickers_str: str):
         
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
     
-    if buy_zone_signals:
-        print("\n--- Buy Zone Signals ---")
-        for signal in buy_zone_signals:
-            print(f"Ticker: {signal['Ticker']}, Strategy: {signal['Strategy']}")
+    # Group by Strategy
+    strategy_groups = {}
+    for signal in buy_zone_signals:
+        strategy = signal['Strategy']
+        ticker = signal['Ticker']
+        if strategy not in strategy_groups:
+            strategy_groups[strategy] = []
+        if ticker not in strategy_groups[strategy]:
+            strategy_groups[strategy].append(ticker)
+            
+    return strategy_groups
 
 # --- Main App Layout ---
 app.layout = dbc.Container([

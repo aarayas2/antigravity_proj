@@ -30,10 +30,16 @@ def layout():
                             title="Copy to clipboard",
                             style={"cursor": "pointer"}
                         )
-                    )
+                    ),
+                    dbc.Button("Process", id="process-button", color="primary", disabled=True)
                 ])
             ], md=6)        
         ], className="mb-4"),
+        dbc.Spinner(
+            html.Div(id='batch-results-container', className="mb-4"),
+            color="primary",
+            type="border"
+        ),
         html.Div(id='stats-table-container')
     ])
 
@@ -155,3 +161,51 @@ def update_tickers_input(virtualRowData, rowData):
         
     unique_tickers = ";".join(list(dict.fromkeys(row.get("Ticker", "") for row in current_data if row.get("Ticker"))))
     return unique_tickers
+
+
+@callback(
+    Output('process-button', 'disabled'),
+    Input('tickers-input', 'value')
+)
+def disable_process_button(tickers_val):
+    if not tickers_val or not tickers_val.strip():
+        return True
+    return False
+
+
+@callback(
+    Output('batch-results-container', 'children'),
+    Input('process-button', 'n_clicks'),
+    dash.State('tickers-input', 'value'),
+    prevent_initial_call=True
+)
+def run_and_display_batch_mode(n_clicks, tickers_val):
+    if not n_clicks or not tickers_val:
+        return dash.no_update
+
+    # Import locally to avoid circular import issues
+    from app import run_batch_mode
+
+    # Call the backend function
+    results = run_batch_mode(tickers_val)
+
+    if not results:
+        return dbc.Alert("No buy zone signals found or processing failed.", color="warning")
+
+    # Format the dictionary into read-only text inputs grouped by Strategy
+    result_elements = []
+    for strategy, tickers_list in results.items():
+        tickers_str = "; ".join(tickers_list)
+        result_elements.append(
+            dbc.Row([
+                dbc.Col([
+                    dbc.Label(f"{strategy}:", className="fw-bold"),
+                    dbc.Input(value=tickers_str, type="text", readonly=True, className="mb-2")
+                ])
+            ])
+        )
+
+    return dbc.Card([
+        dbc.CardHeader(html.H5("Buy Zone Signals", className="mb-0")),
+        dbc.CardBody(result_elements)
+    ], className="mt-3")
