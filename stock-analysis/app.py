@@ -44,6 +44,10 @@ def run_batch_mode(tickers_str: str):
     strategy_groups = defaultdict(list)
     batch_stats = []
     
+    # Pre-compute constant date strings to avoid redundant string formatting in the loop
+    date_begin_str = start_date_obj.strftime('%Y-%m-%d')
+    date_end_str = end_date_obj.strftime('%Y-%m-%d')
+
     for ticker in tickers:
         print(f"[{ticker}] Starting analysis...")
         result = run_analysis_for_ticker(ticker, start_date_obj, end_date_obj, is_batch_mode=True)
@@ -52,10 +56,6 @@ def run_batch_mode(tickers_str: str):
             continue
         
         # Collect stats for batch save
-        date_begin_str = start_date_obj.strftime('%Y-%m-%d')
-        date_end_str = end_date_obj.strftime('%Y-%m-%d')
-
-
         batch_stats.append({
             'ticker': ticker,
             'date_begin': date_begin_str,
