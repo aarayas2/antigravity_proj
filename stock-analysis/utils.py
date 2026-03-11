@@ -222,6 +222,7 @@ def _has_valid_signals(df: pd.DataFrame) -> bool:
         return False
     if 'Position' not in df.columns or 'Close' not in df.columns:
         return False
+    # Optimized check to avoid full column summation
     if not (df['Position'] != 0).any():
         return False
     return True
