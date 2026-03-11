@@ -1,0 +1,902 @@
+[
+  {
+    "TICK0": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK1": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK2": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK3": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK4": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK5": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK6": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK7": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK8": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK9": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK10": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK11": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK12": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK13": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK14": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK15": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK16": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK17": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK18": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK19": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK20": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK21": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK22": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK23": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK24": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK25": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK26": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK27": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK28": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK29": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK30": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK31": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK32": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK33": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK34": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK35": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK36": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK37": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK38": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK39": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK40": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK41": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK42": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK43": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK44": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK45": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK46": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK47": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK48": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK49": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK50": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK51": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK52": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK53": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK54": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK55": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK56": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK57": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK58": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK59": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK60": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK61": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK62": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK63": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK64": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK65": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK66": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK67": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK68": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK69": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK70": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK71": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK72": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK73": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK74": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK75": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK76": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK77": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK78": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK79": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK80": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK81": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK82": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK83": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK84": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK85": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK86": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK87": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK88": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK89": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK90": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK91": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK92": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK93": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK94": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK95": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK96": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK97": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK98": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  },
+  {
+    "TICK99": {
+      "date-begin": "2020-01-01",
+      "date-end": "2020-12-31",
+      "Strategy1": {
+        "Returns": 10.5
+      }
+    }
+  }
+]

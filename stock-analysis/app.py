@@ -41,6 +41,7 @@ def run_batch_mode(tickers_str: str):
     
     success_count = 0
     strategy_groups = {}
+    batch_stats = []
     
     for ticker in tickers:
         print(f"[{ticker}] Starting analysis...")
@@ -49,20 +50,37 @@ def run_batch_mode(tickers_str: str):
             print(f"[{ticker}] Failed to load data.")
             continue
         
-        # Save stats
+        # Collect stats for batch save
         date_begin_str = start_date_obj.strftime('%Y-%m-%d')
         date_end_str = end_date_obj.strftime('%Y-%m-%d')
-        stats_manager.save_stats(ticker, date_begin_str, date_end_str, result["metrics"])
-        print(f"[{ticker}] Analysis complete and stats saved.")
+
+
+        batch_stats.append({
+            'ticker': ticker,
+            'date_begin': date_begin_str,
+            'date_end': date_end_str,
+            'strategies_metrics': result["metrics"]
+        })
+
+        print(f"[{ticker}] Analysis complete.")
         success_count += 1
         
         if result.get("buy_signals"):
             for strategy in result["buy_signals"]:
                 if strategy not in strategy_groups:
                     strategy_groups[strategy] = []
-                # Tickers are already deduplicated, so we can append directly in O(1) time
-                strategy_groups[strategy].append(ticker)
+                if ticker not in strategy_groups[strategy]:
+                    strategy_groups[strategy].append(ticker)
+
+    # Save all stats in one batch operation
+    if batch_stats:
+        stats_manager.save_stats_batch(batch_stats)
+        print(f"Stats saved for {len(batch_stats)} ticker(s).")
         
+    if batch_stats:
+        print(f"Saving statistics for {len(batch_stats)} ticker(s)...")
+        stats_manager.save_stats_batch(batch_stats)
+
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
             
     return strategy_groups

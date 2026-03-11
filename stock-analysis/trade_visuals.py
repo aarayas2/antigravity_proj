@@ -42,6 +42,7 @@ class TradeTooltipFactory:
         """
         self.y_min = y_min
         self.y_max = y_max
+        self._y_coords = (y_min, y_max, y_max, y_min, y_min)
 
     def create_trace(self, trade: Dict[str, Any]) -> Optional[go.Scatter]:
         """
@@ -129,12 +130,11 @@ class TradeTooltipFactory:
 
             # 6. Construct the Polygon for the shaded area
             # We draw a rectangle using 4 points: (start, ymin), (start, ymax), (end, ymax), (end, ymin), (start, ymin) to close
-            x_coords = [entry_date, entry_date, exit_date, exit_date, entry_date]
-            y_coords = [self.y_min, self.y_max, self.y_max, self.y_min, self.y_min]
+            x_coords = (entry_date, entry_date, exit_date, exit_date, entry_date)
 
             trace = go.Scatter(
                 x=x_coords,
-                y=y_coords,
+                y=self._y_coords,
                 fill='toself',
                 fillcolor=color,
                 line=dict(width=0),
