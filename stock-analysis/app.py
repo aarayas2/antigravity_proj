@@ -40,7 +40,7 @@ def run_batch_mode(tickers_str: str):
     print(f"Starting batch analysis for {len(tickers)} ticker(s) from {start_date_obj} to {end_date_obj}...")
     
     success_count = 0
-    strategy_groups_sets = {}
+    strategy_groups = {}
     batch_stats = []
     
     for ticker in tickers:
@@ -66,10 +66,14 @@ def run_batch_mode(tickers_str: str):
         success_count += 1
         
         if result.get("buy_signals"):
+            # Benchmarking showed direct list append is more efficient than using sets and converting to list.
+            # Since the `tickers` input list is already deduplicated at the start of `run_batch_mode`,
+            # we do not need an O(N) list membership check (`if ticker not in strategy_groups[strategy]`) here.
+            # Appending directly to the list is O(1) and safe from duplicates.
             for strategy in result["buy_signals"]:
-                if strategy not in strategy_groups_sets:
-                    strategy_groups_sets[strategy] = set()
-                strategy_groups_sets[strategy].add(ticker)
+                if strategy not in strategy_groups:
+                    strategy_groups[strategy] = []
+                strategy_groups[strategy].append(ticker)
 
     # Save all stats in one batch operation
     if batch_stats:
@@ -77,12 +81,6 @@ def run_batch_mode(tickers_str: str):
         stats_manager.save_stats_batch(batch_stats)
 
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
-
-    strategy_groups = {k: list(v) for k, v in strategy_groups_sets.items()}
-
-    # Convert sets back to lists for downstream compatibility
-    for strategy in strategy_groups:
-        strategy_groups[strategy] = list(strategy_groups[strategy])
 
     return strategy_groups
 
