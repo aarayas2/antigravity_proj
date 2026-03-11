@@ -9,6 +9,7 @@ import os
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from utils import stats_manager, get_date_ranges
+from collections import defaultdict
 
 # Import layout and components after persistence is initialized
 from pages.strategy_chart import layout as strategy_chart_layout
@@ -40,7 +41,7 @@ def run_batch_mode(tickers_str: str):
     print(f"Starting batch analysis for {len(tickers)} ticker(s) from {start_date_obj} to {end_date_obj}...")
     
     success_count = 0
-    strategy_groups = {}
+    strategy_groups = defaultdict(list)
     batch_stats = []
     
     for ticker in tickers:
@@ -68,8 +69,6 @@ def run_batch_mode(tickers_str: str):
         if result.get("buy_signals"):
             # Benchmarking showed direct list append is more efficient than using sets and converting to list
             for strategy in result["buy_signals"]:
-                if strategy not in strategy_groups:
-                    strategy_groups[strategy] = []
                 strategy_groups[strategy].append(ticker)
 
     # Save all stats in one batch operation
@@ -79,7 +78,7 @@ def run_batch_mode(tickers_str: str):
 
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
 
-    return strategy_groups
+    return dict(strategy_groups)
 
 # --- Main App Layout ---
 app.layout = dbc.Container([
