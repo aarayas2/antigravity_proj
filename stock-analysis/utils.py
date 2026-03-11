@@ -294,7 +294,7 @@ def _has_valid_signals(df: pd.DataFrame) -> bool:
     return True
 
 
-def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:
+def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:  # noqa: C901
     """Calculates basic performance metrics from the generated signals."""
     if not _has_valid_signals(df):
         return {
