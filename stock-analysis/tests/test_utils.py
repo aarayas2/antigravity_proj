@@ -32,6 +32,28 @@ class TestLoadData(unittest.TestCase):
     @patch('utils.yf.download')
     @patch('os.makedirs')
     @patch('os.path.exists')
+    def test_load_data_download_failure(self, mock_exists, mock_makedirs, mock_download):
+        from utils import StockDataCache, load_data
+
+        # Simulate cache miss
+        mock_exists.return_value = False
+
+        with patch('utils._cache', StockDataCache(data_dir='test_data')):
+            ticker = "FAILING"
+            start_date = datetime.date(2023, 1, 1)
+            end_date = datetime.date(2023, 1, 10)
+
+            # Simulate exception from yfinance
+            mock_download.side_effect = Exception("Mocked download failure")
+
+            result = load_data(ticker, start_date, end_date)
+
+            mock_download.assert_called_once()
+            self.assertIsNone(result)
+
+    @patch('utils.yf.download')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
     def test_load_data_fetches_and_caches(self, mock_exists, mock_makedirs, mock_download):
         from utils import StockDataCache, load_data
         import utils
