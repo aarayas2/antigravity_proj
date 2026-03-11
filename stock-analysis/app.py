@@ -68,9 +68,7 @@ def run_batch_mode(tickers_str: str):
         if result.get("buy_signals"):
             # Benchmarking showed direct list append is more efficient than using sets and converting to list
             for strategy in result["buy_signals"]:
-                if strategy not in strategy_groups:
-                    strategy_groups[strategy] = []
-                strategy_groups[strategy].append(ticker)
+                strategy_groups.setdefault(strategy, []).append(ticker)
 
     # Save all stats in one batch operation
     if batch_stats:
