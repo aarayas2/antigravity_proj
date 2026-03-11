@@ -71,35 +71,54 @@ class StatsManager:
         """
         Saves or updates the statistics for a ticker.
         """
+        self.save_stats_batch([{
+            "ticker": ticker,
+            "date_begin": date_begin,
+            "date_end": date_end,
+            "strategies_metrics": strategies_metrics
+        }])
+
+    def save_stats_batch(self, batch_data: List[Dict[str, Any]]):
+        """
+        Saves or updates the statistics for multiple tickers in a single operation.
+        Expects a list of dictionaries with keys: 'ticker', 'date_begin', 'date_end', 'strategies_metrics'.
+        """
+        if not batch_data:
+            return
+
         with self._lock: # Thread-safety at the application level
             data = self._storage.read()
             
-            ticker = ticker.upper()
-            
-            # Find if ticker exists
-            existing_idx = None
-            for idx, entry in enumerate(data):
-                if ticker in entry:
-                    existing_idx = idx
-                    break
-            
-            new_entry_data = {
-                "date-begin": date_begin,
-                "date-end": date_end,
-            }
-            new_entry_data.update(strategies_metrics)
-            
-            if existing_idx is not None:
-                existing_entry = data[existing_idx][ticker]
-                # If ticker exists with same date range, do nothing
-                if existing_entry.get("date-begin") == date_begin and existing_entry.get("date-end") == date_end:
-                    return # No operation needed
-                else:
-                    # If date range differs, overwrite
-                    data[existing_idx][ticker] = new_entry_data
-            else:
-                # If ticker does not exist, append it
-                data.append({ticker: new_entry_data})
+            for item in batch_data:
+                ticker = item["ticker"].upper()
+                date_begin = item["date_begin"]
+                date_end = item["date_end"]
+                strategies_metrics = item["strategies_metrics"]
+
+                # Find if ticker exists
+                existing_idx = None
+                for idx, entry in enumerate(data):
+                    if ticker in entry:
+                        existing_idx = idx
+                        break
                 
+                new_entry_data = {
+                    "date-begin": date_begin,
+                    "date-end": date_end,
+                }
+                new_entry_data.update(strategies_metrics)
+
+                if existing_idx is not None:
+                    existing_entry = data[existing_idx][ticker]
+                    # If ticker exists with same date range, do nothing
+                    if existing_entry.get("date-begin") == date_begin and existing_entry.get("date-end") == date_end:
+                        pass # No operation needed for this ticker
+                    else:
+                        # If date range differs, overwrite
+                        data[existing_idx][ticker] = new_entry_data
+                else:
+                    # If ticker does not exist, append it
+                    data.append({ticker: new_entry_data})
+
             self._storage.write(data)
 
