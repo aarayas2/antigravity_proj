@@ -76,7 +76,7 @@ def run_batch_mode(tickers_str: str):
             # we do not need an O(N) list membership check (`if ticker not in strategy_groups[strategy]`) here.
             # Appending directly to the list is O(1) and safe from duplicates.
             for strategy in result["buy_signals"]:
-                strategy_groups.setdefault(strategy, []).append(ticker)
+                strategy_groups[strategy].append(ticker)
     # Save all stats in one batch operation
     if batch_stats:
         print(f"Saving statistics for {len(batch_stats)} ticker(s)...")
