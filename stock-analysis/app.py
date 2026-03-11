@@ -67,6 +67,10 @@ def run_batch_mode(tickers_str: str):
         success_count += 1
         
         if result.get("buy_signals"):
+            # ⚡ Performance Optimization:
+            # Instead of accumulating dicts into an intermediate `buy_zone_signals` list and
+            # iterating over it a second time, we directly populate `strategy_groups` here.
+            # This eliminates redundant O(N) iteration and dictionary allocations.
             # Benchmarking showed direct list append is more efficient than using sets and converting to list.
             # Since the `tickers` input list is already deduplicated at the start of `run_batch_mode`,
             # we do not need an O(N) list membership check (`if ticker not in strategy_groups[strategy]`) here.
