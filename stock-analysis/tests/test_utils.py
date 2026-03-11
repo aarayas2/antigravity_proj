@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import datetime
 
-from utils import calculate_metrics, load_data
+from utils import calculate_metrics, load_data, _compile_performance_metrics
 
 class TestLoadData(unittest.TestCase):
     @patch('utils._cache.get_data')
@@ -813,6 +813,20 @@ class TestLoadDataMissingTests(unittest.TestCase):
 
         mock_get_data.assert_called_once_with(ticker, start_date, end_date)
         self.assertIsNone(result)
+
+class TestCompilePerformanceMetrics(unittest.TestCase):
+    def test_empty_trades_history(self):
+        initial_capital = 10000.0
+        final_capital = 10000.0
+        trades_history = []
+
+        result = _compile_performance_metrics(initial_capital, final_capital, trades_history)
+
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Average Return'], '0.00%')
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Win Rate'], '0.00%')
+        self.assertEqual(result['Trades History'], [])
 
 if __name__ == '__main__':
     unittest.main()
