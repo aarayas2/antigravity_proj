@@ -409,6 +409,77 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
         self.assertIn("Entry Price: N/A", trace.text)
         self.assertIn("Exit Price: N/A", trace.text)
 
+    def test_plotly_shape_generation_exception(self):
+        """Test exception handling during go.Scatter generation by providing invalid data."""
+        from unittest.mock import patch
+
+        trade = {
+            'entry_date': datetime(2023, 1, 1),
+            'exit_date': datetime(2023, 1, 10),
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+
+        # By mocking go.Scatter to raise an Exception, we can cover the `except Exception as e:` block.
+        with patch('trade_visuals.go.Scatter', side_effect=ValueError("Intentional error for testing Exception handling in Plotly trace generation")):
+            trace = self.factory.create_trace(trade)
+            self.assertIsNone(trace)
+
+    def test_malformed_date_strings_exception(self):
+        """Test passing malformed dates to trigger formatting exceptions."""
+        class MalformedDate:
+            def strftime(self, format):
+                raise ValueError("Intentional formatting error")
+
+            def __str__(self):
+                raise ValueError("Intentional string cast error")
+
+            # Make it behave nicely for the initial pandas check `pd.isna`
+            def __bool__(self):
+                return True
+
+        # Plotly go.Scatter doesn't like generic objects for x coordinates and might raise an error
+        # during trace instantiation, hiding the `str()` exception test.
+        # We can either patch `go.Scatter` so it accepts anything or use `mock_date` logic
+        # from earlier tests, but mock `__str__` to raise exception when `hasattr` is false.
+
+        # Actually, let's use a mock that doesn't have `strftime` and raises an error on `__str__`.
+        # MagicMock.__str__ handles things safely, so we need to set side_effect on a regular mock
+        # or class. We can patch `go.Scatter` just to get the `hover_text` generated without error
+        # and test it.
+
+        from unittest.mock import patch
+
+        # When TradeTooltipFactory.create_trace tries to format the dates, it should
+        # fall back to "Unknown" because of the `try...except Exception:` blocks.
+
+        # Test 1: Exception during `strftime` (covered by `test_entry_date_exception` in main suite)
+        # Test 2: Exception during `str()` cast when `strftime` is not present
+
+
+        class NoStrftimeDate:
+            def __str__(self):
+                raise Exception("Intentional string cast error")
+            def __bool__(self):
+                return True
+
+        trade_no_strftime = {
+            'entry_date': NoStrftimeDate(),
+            'exit_date': NoStrftimeDate(),
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+
+        # We'll patch go.Scatter to just return the kwargs it was called with
+        # so we can inspect the `text` parameter.
+        with patch('trade_visuals.go.Scatter', side_effect=lambda **kwargs: kwargs):
+            trace = self.factory.create_trace(trade_no_strftime)
+            self.assertIsNotNone(trace)
+            self.assertIn("Start: Unknown", trace['text'])
+            self.assertIn("End: Unknown", trace['text'])
+
 
 if __name__ == '__main__':
     unittest.main()
