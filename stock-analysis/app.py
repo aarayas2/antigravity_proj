@@ -53,6 +53,7 @@ def run_batch_mode(tickers_str: str):
         date_begin_str = start_date_obj.strftime('%Y-%m-%d')
         date_end_str = end_date_obj.strftime('%Y-%m-%d')
 
+
         batch_stats.append({
             'ticker': ticker,
             'date_begin': date_begin_str,
@@ -69,6 +70,11 @@ def run_batch_mode(tickers_str: str):
                     strategy_groups[strategy] = []
                 if ticker not in strategy_groups[strategy]:
                     strategy_groups[strategy].append(ticker)
+
+    # Save all stats in one batch operation
+    if batch_stats:
+        stats_manager.save_stats_batch(batch_stats)
+        print(f"Stats saved for {len(batch_stats)} ticker(s).")
         
     if batch_stats:
         print(f"Saving statistics for {len(batch_stats)} ticker(s)...")
