@@ -26,7 +26,8 @@ def run_batch_mode(tickers_str: str):
     """
     Executes the batch analysis for a list of tickers sequentially.
     """
-    tickers = [t.strip().upper() for t in tickers_str.split(";") if t.strip()]
+    # Deduplicate tickers while preserving order (to avoid redundant processing and O(N) list lookups later)
+    tickers = list(dict.fromkeys(t.strip().upper() for t in tickers_str.split(";") if t.strip()))
     if not tickers:
         print("No valid tickers provided for batch mode.")
         return
@@ -59,8 +60,8 @@ def run_batch_mode(tickers_str: str):
             for strategy in result["buy_signals"]:
                 if strategy not in strategy_groups:
                     strategy_groups[strategy] = []
-                if ticker not in strategy_groups[strategy]:
-                    strategy_groups[strategy].append(ticker)
+                # Tickers are already deduplicated, so we can append directly in O(1) time
+                strategy_groups[strategy].append(ticker)
         
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
             
@@ -101,11 +102,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if args.ticker:
-        results = run_batch_mode(args.ticker)
-        if results:
-            print("\n--- Buy Zone Signals ---")
-            for strategy, tickers_list in results.items():
-                tickers_str = "; ".join(tickers_list)
-                print(f"{strategy}: {tickers_str}")
+        run_batch_mode(args.ticker)
     else:
         app.run(debug=False, port=8050)
