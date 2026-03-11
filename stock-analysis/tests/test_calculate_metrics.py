@@ -262,6 +262,13 @@ class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
         self.assertEqual(result['Number of Trades'], 1)
         self.assertEqual(result['Total Return'], '50.00%')
 
+    def test_compile_performance_metrics_empty_trades(self):
+        """Passing an empty list [] to _compile_performance_metrics is a trivial 5-line test."""
+        from utils import _compile_performance_metrics
+        result = _compile_performance_metrics(10000.0, 10000.0, [])
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Total Return'], '0.00%')
+
     def test_calculate_metrics_empty_active_df_but_valid(self):
         """Test when the DataFrame is valid but has no active positions, ensuring it doesn't crash."""
         dates = pd.date_range('2024-01-01', periods=2)
