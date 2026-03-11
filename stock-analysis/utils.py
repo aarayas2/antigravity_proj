@@ -196,11 +196,17 @@ def _evaluate_trade_sequence(df, initial_capital, exit_date, exit_price):
 
 def _compile_performance_metrics(initial_capital, final_capital, trades_history):
     trades = len(trades_history)
-    winning_trades = sum(1 for t in trades_history if t['profit'] > 0)
+    winning_trades = 0
+    total_profit_pct = 0.0
+
+    for t in trades_history:
+        if t['profit'] > 0:
+            winning_trades += 1
+        total_profit_pct += t['profit_pct']
 
     total_return = ((final_capital - initial_capital) / initial_capital) * 100
     win_rate = (winning_trades / trades * 100) if trades > 0 else 0
-    avg_return = sum(t['profit_pct'] for t in trades_history) / trades if trades > 0 else 0
+    avg_return = (total_profit_pct / trades) if trades > 0 else 0
     
     return {
         "Total Return": f"{total_return:.2f}%",
