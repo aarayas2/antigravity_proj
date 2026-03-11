@@ -67,13 +67,9 @@ def run_batch_mode(tickers_str: str):
         
         if result.get("buy_signals"):
             for strategy in result["buy_signals"]:
-                if strategy not in strategy_groups:
-                    strategy_groups[strategy] = set()
-                strategy_groups[strategy].add(ticker)
-
-    # Convert sets back to lists for downstream compatibility
-    for strategy in strategy_groups:
-        strategy_groups[strategy] = list(strategy_groups[strategy])
+                if strategy not in strategy_groups_sets:
+                    strategy_groups_sets[strategy] = set()
+                strategy_groups_sets[strategy].add(ticker)
 
     # Save all stats in one batch operation
     if batch_stats:
@@ -83,7 +79,11 @@ def run_batch_mode(tickers_str: str):
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
 
     strategy_groups = {k: list(v) for k, v in strategy_groups_sets.items()}
-            
+
+    # Convert sets back to lists for downstream compatibility
+    for strategy in strategy_groups:
+        strategy_groups[strategy] = list(strategy_groups[strategy])
+
     return strategy_groups
 
 # --- Main App Layout ---
