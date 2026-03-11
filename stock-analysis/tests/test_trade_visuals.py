@@ -519,3 +519,38 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+    def test_plotly_shape_generation_native_exception(self):
+        """Test native exception handling when trace generation natively fails."""
+        class MalformedDateStrftime:
+            def strftime(self, format):
+                raise ValueError("Triggering exception on strftime conversion")
+            def __bool__(self):
+                return True
+            def __str__(self):
+                return "2023-01-01"
+
+        class MalformedDateStr:
+            def __str__(self):
+                raise Exception("Triggering exception on string conversion")
+            def __bool__(self):
+                return True
+
+        # Using mocked objects to trigger the formatting ValueError/Exception for both
+        trade = {
+            'entry_date': MalformedDateStrftime(),
+            'exit_date': MalformedDateStr(),
+            'entry_price': 100.0,
+            'exit_price': 110.0,
+            'profit': 10.0
+        }
+
+        # Do NOT patch go.Scatter. Let the exception bubble up inside the date formatting blocks.
+        # This will explicitly cover lines 108-117.
+        trace = self.factory.create_trace(trade)
+        self.assertIsNotNone(trace)
+        self.assertIn("Start: Unknown", trace.text)
+        self.assertIn("End: Unknown", trace.text)
+
+if __name__ == '__main__':
+    unittest.main()
