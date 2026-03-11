@@ -826,3 +826,76 @@ class TestJsonStatsStorageReadMissingCoverageAdded:
         with open(file_path, "w") as f:
             json.dump({"not": "a list"}, f)
         assert storage.read() == []
+
+def test_stats_manager_save_stats_batch(tmp_path):
+    StatsManager._instance = None
+    file_path = tmp_path / "stats.json"
+    storage = JsonStatsStorage(str(file_path))
+    manager = StatsManager(storage)
+
+    # Initial batch save
+    batch1 = [
+        {
+            "ticker": "AAPL",
+            "date_begin": "2023-01-01",
+            "date_end": "2023-12-31",
+            "strategies_metrics": {"SMA": {"profit": 100}}
+        },
+        {
+            "ticker": "MSFT",
+            "date_begin": "2023-01-01",
+            "date_end": "2023-12-31",
+            "strategies_metrics": {"EMA": {"profit": 50}}
+        }
+    ]
+    manager.save_stats_batch(batch1)
+
+    data = storage.read()
+    assert len(data) == 2
+
+    # Create dict for easy assertion
+    data_dict = {}
+    for entry in data:
+        for k, v in entry.items():
+            data_dict[k] = v
+
+    assert "AAPL" in data_dict
+    assert "MSFT" in data_dict
+    assert data_dict["AAPL"]["SMA"]["profit"] == 100
+    assert data_dict["MSFT"]["EMA"]["profit"] == 50
+
+    # Update and append new in batch
+    batch2 = [
+        {
+            "ticker": "AAPL",
+            "date_begin": "2023-01-01",
+            "date_end": "2024-01-01", # different date, should update
+            "strategies_metrics": {"SMA": {"profit": 200}}
+        },
+        {
+            "ticker": "MSFT",
+            "date_begin": "2023-01-01",
+            "date_end": "2023-12-31", # same date, should do nothing
+            "strategies_metrics": {"EMA": {"profit": 999}}
+        },
+        {
+            "ticker": "TSLA", # new ticker, should append
+            "date_begin": "2024-01-01",
+            "date_end": "2024-12-31",
+            "strategies_metrics": {"RSI": {"profit": 300}}
+        }
+    ]
+    manager.save_stats_batch(batch2)
+
+    data = storage.read()
+    assert len(data) == 3
+
+    data_dict = {}
+    for entry in data:
+        for k, v in entry.items():
+            data_dict[k] = v
+
+    assert data_dict["AAPL"]["SMA"]["profit"] == 200 # updated
+    assert data_dict["MSFT"]["EMA"]["profit"] == 50 # not updated
+    assert "TSLA" in data_dict
+    assert data_dict["TSLA"]["RSI"]["profit"] == 300
