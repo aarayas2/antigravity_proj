@@ -854,6 +854,28 @@ class TestLoadDataMissingTests(unittest.TestCase):
         mock_get_data.assert_called_once_with(ticker, start_date, end_date)
         self.assertIsNone(result)
 
+    @patch('yfinance.download')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_load_data_fetching_failure(self, mock_exists, mock_makedirs, mock_download):
+        from utils import StockDataCache, load_data
+
+        ticker = "FAIL"
+        start_date = datetime.date(2023, 1, 1)
+        end_date = datetime.date(2023, 1, 31)
+
+        # Force a cache miss so it attempts to download
+        mock_exists.return_value = False
+
+        with patch('utils._cache', StockDataCache(data_dir='test_data')):
+            # Rationale mandates mocking yfinance.download to raise an Exception
+            mock_download.side_effect = Exception("Network Error")
+
+            result = load_data(ticker, start_date, end_date)
+
+            mock_download.assert_called_once()
+            self.assertIsNone(result)
+
 class TestCompilePerformanceMetrics(unittest.TestCase):
     def test_empty_trades_history(self):
         initial_capital = 10000.0
