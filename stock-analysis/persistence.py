@@ -103,3 +103,46 @@ class StatsManager:
                 
             self._storage.write(data)
 
+    def save_stats_batch(self, batch_data: List[Dict[str, Any]]):
+        """
+        Saves or updates the statistics for a batch of tickers to avoid repeated file I/O operations.
+        Each item in `batch_data` must contain 'ticker', 'date_begin', 'date_end', and 'strategies_metrics'.
+        """
+        with self._lock: # Thread-safety at the application level
+            data = self._storage.read()
+
+            # Create a mapping for O(1) lookups and updates
+            data_dict = {}
+            for idx, entry in enumerate(data):
+                # Using the first key as the ticker identifier
+                for key in entry.keys():
+                    data_dict[key] = (idx, entry[key])
+                    break
+
+            modified = False
+            for item in batch_data:
+                ticker = item['ticker'].upper()
+                date_begin = item['date_begin']
+                date_end = item['date_end']
+                strategies_metrics = item['strategies_metrics']
+
+                new_entry_data = {
+                    "date-begin": date_begin,
+                    "date-end": date_end,
+                }
+                new_entry_data.update(strategies_metrics)
+
+                if ticker in data_dict:
+                    idx, existing_entry = data_dict[ticker]
+                    if existing_entry.get("date-begin") == date_begin and existing_entry.get("date-end") == date_end:
+                        pass # No operation needed
+                    else:
+                        data[idx][ticker] = new_entry_data
+                        modified = True
+                else:
+                    data.append({ticker: new_entry_data})
+                    data_dict[ticker] = (len(data) - 1, new_entry_data)
+                    modified = True
+
+            if modified:
+                self._storage.write(data)
