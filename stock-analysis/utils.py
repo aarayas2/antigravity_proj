@@ -199,6 +199,9 @@ def _compile_performance_metrics(initial_capital, final_capital, trades_history)
     winning_trades = 0
     total_profit_pct = 0.0
 
+    # PERFORMANCE OPTIMIZATION: A single loop to compute the count of winning
+    # trades and average return avoids multiple duplicate passes over the trades list
+    # (previously O(2N) using sum() comprehension logic, now O(N)).
     for t in trades_history:
         if t['profit'] > 0:
             winning_trades += 1
@@ -222,6 +225,7 @@ def _has_valid_signals(df: pd.DataFrame) -> bool:
         return False
     if 'Position' not in df.columns or 'Close' not in df.columns:
         return False
+    # Optimized check to avoid full column summation
     if not (df['Position'] != 0).any():
         return False
     return True
