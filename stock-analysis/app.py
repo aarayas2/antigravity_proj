@@ -40,7 +40,7 @@ def run_batch_mode(tickers_str: str):
     print(f"Starting batch analysis for {len(tickers)} ticker(s) from {start_date_obj} to {end_date_obj}...")
     
     success_count = 0
-    strategy_groups = {}
+    strategy_groups_sets = {}
     batch_stats = []
     
     for ticker in tickers:
@@ -77,14 +77,12 @@ def run_batch_mode(tickers_str: str):
 
     # Save all stats in one batch operation
     if batch_stats:
-        stats_manager.save_stats_batch(batch_stats)
-        print(f"Stats saved for {len(batch_stats)} ticker(s).")
-        
-    if batch_stats:
         print(f"Saving statistics for {len(batch_stats)} ticker(s)...")
         stats_manager.save_stats_batch(batch_stats)
 
     print(f"Batch analysis finished. Successfully processed {success_count}/{len(tickers)} ticker(s).")
+
+    strategy_groups = {k: list(v) for k, v in strategy_groups_sets.items()}
             
     return strategy_groups
 
