@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import datetime
 
-from utils import calculate_metrics, load_data
+from utils import calculate_metrics, load_data, _compile_performance_metrics
 
 class TestLoadData(unittest.TestCase):
     @patch('utils._cache.get_data')
@@ -799,6 +799,46 @@ class TestLoadDataMissingTests(unittest.TestCase):
         pd.testing.assert_frame_equal(result, expected_df)
 
     @patch('yfinance.download')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_load_data_fetching_failure(self, mock_exists, mock_makedirs, mock_download):
+        from utils import load_data, StockDataCache
+
+        mock_exists.return_value = False
+
+        with patch('utils._cache', StockDataCache(data_dir='test_data')):
+            ticker = "INVALID"
+            start_date = datetime.date(2023, 1, 1)
+            end_date = datetime.date(2023, 1, 31)
+
+            mock_download.side_effect = Exception("Fetch failed")
+
+            result = load_data(ticker, start_date, end_date)
+
+            mock_download.assert_called_once()
+            self.assertIsNone(result)
+
+    @patch('yfinance.download')
+    @patch('os.makedirs')
+    @patch('os.path.exists')
+    def test_load_data_fetching_empty(self, mock_exists, mock_makedirs, mock_download):
+        from utils import load_data, StockDataCache
+
+        mock_exists.return_value = False
+
+        with patch('utils._cache', StockDataCache(data_dir='test_data')):
+            ticker = "EMPTY"
+            start_date = datetime.date(2023, 1, 1)
+            end_date = datetime.date(2023, 1, 31)
+
+            mock_download.return_value = pd.DataFrame()
+
+            result = load_data(ticker, start_date, end_date)
+
+            mock_download.assert_called_once()
+            self.assertIsNone(result)
+
+    @patch('yfinance.download')
     @patch('utils.StockDataCache.get_data')
     def test_load_data_none(self, mock_get_data, mock_download):
         from utils import load_data
@@ -835,6 +875,20 @@ class TestLoadDataMissingTests(unittest.TestCase):
 
             mock_download.assert_called_once()
             self.assertIsNone(result)
+
+class TestCompilePerformanceMetrics(unittest.TestCase):
+    def test_empty_trades_history(self):
+        initial_capital = 10000.0
+        final_capital = 10000.0
+        trades_history = []
+
+        result = _compile_performance_metrics(initial_capital, final_capital, trades_history)
+
+        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Average Return'], '0.00%')
+        self.assertEqual(result['Number of Trades'], 0)
+        self.assertEqual(result['Win Rate'], '0.00%')
+        self.assertEqual(result['Trades History'], [])
 
 if __name__ == '__main__':
     unittest.main()
