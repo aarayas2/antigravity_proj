@@ -101,6 +101,75 @@ class TestApp:
         assert saved_batch[0]["ticker"] == "AAPL"
 
 
+class TestAppMain:
+
+    @patch('app.get_date_ranges')
+    @patch('app.run_analysis_for_ticker')
+    @patch('app.stats_manager')
+    @patch('app.app.run')
+    @patch('sys.argv', ['app.py', '--ticker', 'AAPL'])
+    def test_main_batch_mode_execution(self, mock_app_run, mock_stats_manager, mock_run_analysis, mock_get_date_ranges):
+        # This tests that running `main()` with `--ticker AAPL` properly calls into `run_batch_mode`
+        # and executes its logic, without mocking `run_batch_mode` itself.
+        import app
+
+        min_date = datetime.datetime(2023, 1, 1)
+        max_date = datetime.datetime(2023, 12, 31)
+        mock_get_date_ranges.return_value = {
+            "min_date": min_date,
+            "max_date": max_date
+        }
+
+        mock_run_analysis.return_value = {
+            "metrics": {"strat1": {"return": 10}},
+            "buy_signals": ["strat1"]
+        }
+
+        app.main()
+
+        mock_run_analysis.assert_called_once_with("AAPL", min_date, max_date, is_batch_mode=True)
+        mock_stats_manager.save_stats_batch.assert_called_once()
+        mock_app_run.assert_not_called()
+
+    @patch('app.app.run')
+    @patch('sys.argv', ['app.py'])
+    def test_main_server_mode(self, mock_app_run):
+        import app
+        app.main()
+
+        mock_app_run.assert_called_once_with(debug=False, port=8050)
+
+
+class TestAppRouting:
+
+    @patch('app.strategy_statistics_layout')
+    @patch('app.strategy_chart_layout')
+    def test_display_page_stats(self, mock_chart_layout, mock_stats_layout):
+        from app import display_page
+
+        mock_stats_layout.return_value = "Stats Layout"
+        mock_chart_layout.return_value = "Chart Layout"
+
+        # Test routing to /stats
+        result = display_page('/stats')
+        assert result == "Stats Layout"
+
+    @patch('app.strategy_statistics_layout')
+    @patch('app.strategy_chart_layout')
+    def test_display_page_chart(self, mock_chart_layout, mock_stats_layout):
+        from app import display_page
+
+        mock_stats_layout.return_value = "Stats Layout"
+        mock_chart_layout.return_value = "Chart Layout"
+
+        # Test routing to / (or any other path)
+        result = display_page('/')
+        assert result == "Chart Layout"
+
+        result = display_page('/unknown')
+        assert result == "Chart Layout"
+
+
     @patch('app.stats_manager')
     @patch('app.run_analysis_for_ticker')
     @patch('app.get_date_ranges')

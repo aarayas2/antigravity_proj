@@ -115,7 +115,7 @@ def display_page(pathname):
     else:
         return strategy_chart_layout() if callable(strategy_chart_layout) else strategy_chart_layout
 
-if __name__ == '__main__':
+def main():
     parser = argparse.ArgumentParser(description="Stock Analysis App")
     parser.add_argument("--ticker", type=str, help="Run in batch mode for provided ticker(s), separated by semicolons (e.g., 'MSFT;AAPL')")
     args = parser.parse_args()
@@ -124,3 +124,6 @@ if __name__ == '__main__':
         run_batch_mode(args.ticker)
     else:
         app.run(debug=False, port=8050)
+
+if __name__ == '__main__':
+    main()
