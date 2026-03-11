@@ -66,7 +66,10 @@ def run_batch_mode(tickers_str: str):
         success_count += 1
         
         if result.get("buy_signals"):
-            # Benchmarking showed direct list append is more efficient than using sets and converting to list
+            # Benchmarking showed direct list append is more efficient than using sets and converting to list.
+            # Since the `tickers` input list is already deduplicated at the start of `run_batch_mode`,
+            # we do not need an O(N) list membership check (`if ticker not in strategy_groups[strategy]`) here.
+            # Appending directly to the list is O(1) and safe from duplicates.
             for strategy in result["buy_signals"]:
                 if strategy not in strategy_groups:
                     strategy_groups[strategy] = []
