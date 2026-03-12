@@ -912,5 +912,97 @@ class TestCompilePerformanceMetrics(unittest.TestCase):
         self.assertEqual(result['Win Rate'], 0.0)
         self.assertEqual(result['Trades History'], [])
 
+
+class TestTradeEvaluator(unittest.TestCase):
+    def setUp(self):
+        # Mock pandas and yfinance for the restricted sandbox environment
+        self.patcher_pd = patch.dict('sys.modules', {'pandas': MagicMock()})
+        self.patcher_yf = patch.dict('sys.modules', {'yfinance': MagicMock()})
+        self.patcher_pd.start()
+        self.patcher_yf.start()
+
+    def tearDown(self):
+        self.patcher_pd.stop()
+        self.patcher_yf.stop()
+
+    def test_successful_buy(self):
+        from utils import _TradeEvaluator
+        evaluator = _TradeEvaluator(1000)
+        evaluator.process_buy("2023-01-01", 100)
+        self.assertEqual(evaluator.position_size, 10)
+        self.assertEqual(evaluator.capital, 0)
+        self.assertEqual(evaluator.buy_price, 100)
+        self.assertEqual(evaluator.buy_date, "2023-01-01")
+
+    def test_insufficient_capital(self):
+        from utils import _TradeEvaluator
+        evaluator = _TradeEvaluator(50)
+        evaluator.process_buy("2023-01-01", 100)
+        self.assertEqual(evaluator.position_size, 0)
+        self.assertEqual(evaluator.capital, 50)
+        self.assertEqual(evaluator.buy_price, 0)
+        self.assertIsNone(evaluator.buy_date)
+
+    def test_insufficient_capital_exact_equality(self):
+        from utils import _TradeEvaluator
+        evaluator = _TradeEvaluator(100)
+        evaluator.process_buy("2023-01-01", 100)
+        self.assertEqual(evaluator.position_size, 0)
+        self.assertEqual(evaluator.capital, 100)
+        self.assertEqual(evaluator.buy_price, 0)
+        self.assertIsNone(evaluator.buy_date)
+
+    def test_zero_and_negative_price_handling(self):
+        from utils import _TradeEvaluator
+        evaluator = _TradeEvaluator(1000)
+        evaluator.process_buy("2023-01-01", 0)
+        self.assertEqual(evaluator.position_size, 0)
+        self.assertEqual(evaluator.capital, 1000)
+
+        evaluator.process_buy("2023-01-01", -50)
+        self.assertEqual(evaluator.position_size, 0)
+        self.assertEqual(evaluator.capital, 1000)
+
+    def test_sequential_buy_signals_state_accumulation(self):
+        from utils import _TradeEvaluator
+        evaluator = _TradeEvaluator(1000)
+        evaluator.process_buy("2023-01-01", 400)
+        self.assertEqual(evaluator.position_size, 2)
+        self.assertEqual(evaluator.capital, 200)
+        
+        # Second buy signal adds to position
+        evaluator.process_buy("2023-01-02", 100)
+        self.assertEqual(evaluator.position_size, 4)
+        self.assertEqual(evaluator.capital, 0)
+        self.assertEqual(evaluator.buy_price, 100)
+        self.assertEqual(evaluator.buy_date, "2023-01-02")
+
+    def test_successful_sell(self):
+        from utils import _TradeEvaluator
+        evaluator = _TradeEvaluator(1000)
+        evaluator.process_buy("2023-01-01", 100)
+        self.assertEqual(evaluator.position_size, 10)
+        self.assertEqual(evaluator.capital, 0)
+        
+        evaluator.process_sell("2023-01-02", 150)
+        self.assertEqual(evaluator.position_size, 0)
+        self.assertEqual(evaluator.capital, 1500)
+        self.assertEqual(len(evaluator.trades_history), 1)
+        self.assertEqual(evaluator.trades_history[0]["profit"], 50)
+        self.assertEqual(evaluator.trades_history[0]["profit_pct"], 50.0)
+
+    def test_close_open_positions(self):
+        from utils import _TradeEvaluator
+        evaluator = _TradeEvaluator(1000)
+        evaluator.process_buy("2023-01-01", 100)
+        self.assertEqual(evaluator.position_size, 10)
+        
+        evaluator.close_open_position("2023-01-31", 200)
+        self.assertEqual(evaluator.position_size, 10) # close_open_position doesn't reset position_size in current impl
+        self.assertEqual(evaluator.capital, 2000)
+        self.assertEqual(len(evaluator.trades_history), 1)
+        self.assertEqual(evaluator.trades_history[0]["profit"], 100)
+        self.assertEqual(evaluator.trades_history[0]["profit_pct"], 100.0)
+
 if __name__ == '__main__':
     unittest.main()
