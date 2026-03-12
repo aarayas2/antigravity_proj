@@ -1,5 +1,5 @@
 import pandas as pd
-import pandas_ta
+import pandas_ta  # pylint: disable=unused-import # Required to register .ta accessor
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
