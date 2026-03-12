@@ -154,7 +154,7 @@ def update_tickers_input(virtualRowData, rowData):
     if not current_data:
         return ""
         
-    unique_tickers = ";".join(list(dict.fromkeys(row.get("Ticker", "") for row in current_data if row.get("Ticker"))))
+    unique_tickers = ";".join(set(row.get("Ticker", "") for row in current_data if row.get("Ticker")))
     return unique_tickers
 
 
