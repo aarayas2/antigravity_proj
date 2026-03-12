@@ -5,6 +5,7 @@ that can be scanned to easily connect to the network.
 """
 
 import io
+import re
 import base64
 import streamlit as st  # pylint: disable=import-error
 from segno import helpers  # pylint: disable=import-error
@@ -284,6 +285,9 @@ if st.button("Generate QR Code"):
             st.markdown("### Your QR Code is Ready!")
             st.markdown(IMG_HTML, unsafe_allow_html=True)
 
+            # Sanitize SSID for filename to prevent path traversal
+            safe_ssid = re.sub(r'[^a-zA-Z0-9_-]', '_', ssid)
+
             # Provide Download Buttons
             st.markdown("<br>", unsafe_allow_html=True)
             dl_col1, _, _ = st.columns([2, 1, 1])
@@ -291,7 +295,7 @@ if st.button("Generate QR Code"):
                 st.download_button(
                     label="⬇️ Download QR Code (PNG)",
                     data=buff.getvalue(),
-                    file_name=f"{ssid}_wifi_qr.png",
+                    file_name=f"{safe_ssid}_wifi_qr.png",
                     mime="image/png",
                 )
 
@@ -309,7 +313,7 @@ if st.button("Generate QR Code"):
                 st.download_button(
                     label="⬇️ Download QR Code (SVG - Vector)",
                     data=svg_buff.getvalue(),
-                    file_name=f"{ssid}_wifi_qr.svg",
+                    file_name=f"{safe_ssid}_wifi_qr.svg",
                     mime="image/svg+xml",
                 )
 
