@@ -104,12 +104,12 @@ class StatsManager:
             data = self._storage.read()
 
             # Create a mapping for O(1) lookups and updates
-            data_dict = {}
-            for idx, entry in enumerate(data):
-                # Using the first key as the ticker identifier
-                for key in entry.keys():
-                    data_dict[key] = (idx, entry[key])
-                    break
+            # Using the first key as the ticker identifier
+            data_dict = {
+                k: (i, e[k]) 
+                for i, e in enumerate(data) 
+                for k in [next(iter(e))]
+            }
 
             modified = False
             for item in batch_data:
