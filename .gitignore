@@ -1,7 +1,7 @@
 __pycache__/
 *.py[cod]
 *$py.class
-stock-analysis/data/
+stock_analysis/data/
 
 # Environments
 .env
