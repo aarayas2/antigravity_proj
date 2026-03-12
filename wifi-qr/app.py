@@ -6,8 +6,8 @@ that can be scanned to easily connect to the network.
 
 import io
 import base64
-import streamlit as st
-from segno import helpers
+import streamlit as st  # pylint: disable=import-error
+from segno import helpers  # pylint: disable=import-error
 
 # Configure page
 st.set_page_config(
