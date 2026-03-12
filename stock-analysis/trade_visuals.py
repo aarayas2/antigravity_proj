@@ -28,7 +28,7 @@ The factory includes safeguards against malformed or missing data:
 
 from typing import Dict, Any, Optional
 
-import pandas as pd
+import pandas as pd  # pylint: disable=import-error
 import plotly.graph_objects as go  # pylint: disable=import-error
 
 

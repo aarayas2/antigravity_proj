@@ -10,9 +10,9 @@ trade window visualizations.
 
 from typing import Dict, Any, Tuple, Optional
 
-import pandas as pd
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
+import pandas as pd  # pylint: disable=import-error
+import plotly.graph_objects as go  # pylint: disable=import-error
+from plotly.subplots import make_subplots  # pylint: disable=import-error
 
 from strategy import STRATEGIES  # pylint: disable=import-error
 from trade_visuals import TradeTooltipFactory  # pylint: disable=import-error
