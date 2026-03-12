@@ -7,9 +7,9 @@ from collections import defaultdict
 import os
 import sys
 
-import dash
-from dash import dcc, html, Input, Output, callback
-import dash_bootstrap_components as dbc
+import dash  # pylint: disable=import-error
+from dash import dcc, html, Input, Output, callback  # pylint: disable=import-error
+import dash_bootstrap_components as dbc  # pylint: disable=import-error
 
 # Ensure pages directory and current directory are in path
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
