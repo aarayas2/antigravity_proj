@@ -1,3 +1,7 @@
+"""
+Persistence layer for storing and retrieving statistics.
+"""
+
 import json
 import os
 import threading
@@ -5,29 +9,32 @@ from abc import ABC, abstractmethod
 from typing import Dict, Any, List
 
 class StatsStorageStrategy(ABC):
+    """Abstract base class for storage strategies."""
+
     @abstractmethod
     def read(self) -> List[Dict[str, Any]]:
-        pass
+        """Reads data from the storage."""
 
     @abstractmethod
     def write(self, data: List[Dict[str, Any]]) -> None:
-        pass
+        """Writes data to the storage."""
 
 
 class JsonStatsStorage(StatsStorageStrategy):
+    """Storage strategy for JSON files."""
     def __init__(self, file_path: str):
         self.file_path = file_path
         # Ensure directory exists
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
         if not os.path.exists(self.file_path):
-            with open(self.file_path, 'w') as f:
+            with open(self.file_path, 'w', encoding='utf-8') as f:
                 json.dump([], f)
 
     def read(self) -> List[Dict[str, Any]]:
         if not os.path.exists(self.file_path):
             return []
-            
-        with open(self.file_path, 'r') as f:
+
+        with open(self.file_path, 'r', encoding='utf-8') as f:
             try:
                 data = json.load(f)
                 if not isinstance(data, list):
@@ -37,11 +44,11 @@ class JsonStatsStorage(StatsStorageStrategy):
         return data
 
     def write(self, data: List[Dict[str, Any]]) -> None:
-        # Write to a temporary file first for atomic replacement (error handling/corruption prevention)
+        # Write to a temp file first for atomic replacement (prevents corruption)
         temp_path = self.file_path + '.tmp'
-        
+
         try:
-            with open(temp_path, 'w') as tf:
+            with open(temp_path, 'w', encoding='utf-8') as tf:
                 json.dump(data, tf, indent=2)
             # Atomic replace works cross-platform
             os.replace(temp_path, self.file_path)
@@ -51,14 +58,18 @@ class JsonStatsStorage(StatsStorageStrategy):
             raise e
 
 class StatsManager:
+    """Manages the saving and updating of statistics via a storage strategy."""
     _instance = None
     _lock = threading.Lock()
+    _storage = None
 
     def __new__(cls, storage_strategy: StatsStorageStrategy = None):
         with cls._lock:
             if cls._instance is None:
                 if storage_strategy is None:
-                    raise ValueError("A storage strategy must be provided for the first initialization.")
+                    raise ValueError(
+                        "A storage strategy must be provided for the first initialization."
+                    )
                 cls._instance = super(StatsManager, cls).__new__(cls)
                 cls._instance._storage = storage_strategy
             return cls._instance
@@ -67,7 +78,10 @@ class StatsManager:
         # Prevent re-initialization if already instantiated
         pass
 
-    def save_stats(self, ticker: str, date_begin: str, date_end: str, strategies_metrics: Dict[str, Dict[str, Any]]):
+    def save_stats(
+        self, ticker: str, date_begin: str, date_end: str,
+        strategies_metrics: Dict[str, Dict[str, Any]]
+    ):
         """
         Saves or updates the statistics for a ticker.
         """
@@ -80,8 +94,8 @@ class StatsManager:
 
     def save_stats_batch(self, batch_data: List[Dict[str, Any]]):
         """
-        Saves or updates the statistics for a batch of tickers to avoid repeated file I/O operations.
-        Each item in `batch_data` must contain 'ticker', 'date_begin', 'date_end', and 'strategies_metrics'.
+        Saves or updates statistics for a batch of tickers to avoid repeated I/O operations.
+        Each item must contain 'ticker', 'date_begin', 'date_end', and 'strategies_metrics'.
         """
         if not batch_data:
             return
@@ -112,7 +126,8 @@ class StatsManager:
 
                 if ticker in data_dict:
                     idx, existing_entry = data_dict[ticker]
-                    if existing_entry.get("date-begin") == date_begin and existing_entry.get("date-end") == date_end:
+                    if (existing_entry.get("date-begin") == date_begin and
+                            existing_entry.get("date-end") == date_end):
                         pass # No operation needed
                     else:
                         data[idx][ticker] = new_entry_data
