@@ -1,7 +1,13 @@
-import streamlit as st
-from segno import helpers
+"""
+A Streamlit web application to generate Wi-Fi QR codes.
+It allows users to input Wi-Fi credentials and generates a QR code
+that can be scanned to easily connect to the network.
+"""
+
 import io
 import base64
+import streamlit as st
+from segno import helpers
 
 # Configure page
 st.set_page_config(
@@ -158,42 +164,86 @@ st.markdown("""
 
 # Application Header
 st.markdown('<h1 class="main-header">Wi-Fi QR Code Generator</h1>', unsafe_allow_html=True)
-st.markdown('<p class="sub-header">Instantly create high-quality QR codes for your wireless network.<br>Guests can scan to connect without typing passwords!</p>', unsafe_allow_html=True)
+st.markdown(
+    '<p class="sub-header">Instantly create high-quality QR codes for your wireless network.<br>'
+    'Guests can scan to connect without typing passwords!</p>',
+    unsafe_allow_html=True
+)
 
 # Main Form Area
 with st.container():
     col1, col2 = st.columns([2, 1])
-    
+
     with col1:
         st.markdown("### Network Details")
-        ssid = st.text_input("Network Name (SSID)", placeholder="e.g. My Awesome Home Wi-Fi", help="The name of your wireless network.")
-        password = st.text_input("Password", type="password", placeholder="Enter network password", help="Leave blank if the network is open.")
-        
+        ssid = st.text_input(
+            "Network Name (SSID)",
+            placeholder="e.g. My Awesome Home Wi-Fi",
+            help="The name of your wireless network."
+        )
+        password = st.text_input(
+            "Password",
+            type="password",
+            placeholder="Enter network password",
+            help="Leave blank if the network is open."
+        )
+
         col_enc, col_hidden = st.columns(2)
         with col_enc:
-            security = st.selectbox("Encryption Type", options=["WPA/WPA2/WPA3", "WEP", "None"], help="Most modern routers use WPA/WPA2/WPA3.")
+            security = st.selectbox(
+                "Encryption Type",
+                options=["WPA/WPA2/WPA3", "WEP", "None"],
+                help="Most modern routers use WPA/WPA2/WPA3."
+            )
         with col_hidden:
             st.write("") # Spacer
             st.write("") # Spacer
-            hidden = st.checkbox("Hidden Network?", help="Check this if your network SSID is not broadcasted.")
+            hidden = st.checkbox(
+                "Hidden Network?",
+                help="Check this if your network SSID is not broadcasted."
+            )
 
     with col2:
         st.markdown("### Customization")
         # Map nice names to internal representations
-        color_dark = st.color_picker("QR Code Color", value="#000000", help="The color of the QR code modules.")
-        color_light = st.color_picker("Background Color", value="#FFFFFF", help="The background color behind the QR code.")
-        scale = st.slider("Size (Scale)", min_value=3, max_value=20, value=8, help="Determines the size of the generated image.")
-        border = st.slider("Border Size", min_value=1, max_value=10, value=4, help="The quiet zone padding around the QR code.")
+        color_dark = st.color_picker(
+            "QR Code Color",
+            value="#000000",
+            help="The color of the QR code modules."
+        )
+        color_light = st.color_picker(
+            "Background Color",
+            value="#FFFFFF",
+            help="The background color behind the QR code."
+        )
+        scale = st.slider(
+            "Size (Scale)",
+            min_value=3,
+            max_value=20,
+            value=8,
+            help="Determines the size of the generated image."
+        )
+        border = st.slider(
+            "Border Size",
+            min_value=1,
+            max_value=10,
+            value=4,
+            help="The quiet zone padding around the QR code."
+        )
 
 # Generate Logic
 st.markdown("---")
-col_center, _, _ = st.columns([1, 1, 1]) # dummy layout just to center button somewhat if needed, though we styled it to 100% width
+# dummy layout just to center button somewhat if needed, though we styled it to 100% width
+col_center, _, _ = st.columns([1, 1, 1])
 
 if st.button("Generate QR Code"):
     if not ssid:
         st.error("Please enter a Network Name (SSID).")
     elif security != "None" and not password:
-        st.warning("You selected an encryption type but didn't provide a password. If the network has no password, select 'None' for Encryption Type.")
+        st.warning(
+            "You selected an encryption type but didn't provide a password. "
+            "If the network has no password, select 'None' for Encryption Type."
+        )
     else:
         # Map security selection to segno values
         sec_map = {
@@ -201,7 +251,7 @@ if st.button("Generate QR Code"):
             "WEP": "WEP",
             "None": "nopass"
         }
-        
+
         try:
             # Create the QR code
             qr = helpers.make_wifi(
@@ -210,25 +260,30 @@ if st.button("Generate QR Code"):
                 security=sec_map[security],
                 hidden=hidden
             )
-            
+
             # Save QR to a buffer (PNG)
             buff = io.BytesIO()
             qr.save(
-                buff, 
-                kind='png', 
-                scale=scale, 
-                border=border, 
-                dark=color_dark, 
+                buff,
+                kind='png',
+                scale=scale,
+                border=border,
+                dark=color_dark,
                 light=color_light
             )
-            
+
             # encode for display in HTML
             img_str = base64.b64encode(buff.getvalue()).decode()
-            img_html = f'<div class="qr-container"><img src="data:image/png;base64,{img_str}" alt="WiFi QR Code" style="max-width: 100%; border-radius: 4px;"></div>'
-            
+            IMG_HTML = (
+                '<div class="qr-container">'
+                f'<img src="data:image/png;base64,{img_str}" alt="WiFi QR Code" '
+                'style="max-width: 100%; border-radius: 4px;">'
+                '</div>'
+            )
+
             st.markdown("### Your QR Code is Ready!")
-            st.markdown(img_html, unsafe_allow_html=True)
-            
+            st.markdown(IMG_HTML, unsafe_allow_html=True)
+
             # Provide Download Buttons
             st.markdown("<br>", unsafe_allow_html=True)
             dl_col1, _, _ = st.columns([2, 1, 1])
@@ -239,15 +294,15 @@ if st.button("Generate QR Code"):
                     file_name=f"{ssid}_wifi_qr.png",
                     mime="image/png",
                 )
-                
+
             # Optional SVG Download
             svg_buff = io.BytesIO()
             qr.save(
-                svg_buff, 
-                kind='svg', 
-                scale=scale, 
-                border=border, 
-                dark=color_dark, 
+                svg_buff,
+                kind='svg',
+                scale=scale,
+                border=border,
+                dark=color_dark,
                 light=color_light
             )
             with dl_col1:
@@ -257,12 +312,12 @@ if st.button("Generate QR Code"):
                     file_name=f"{ssid}_wifi_qr.svg",
                     mime="image/svg+xml",
                 )
-                    
+
             if st.session_state.get('show_fireworks', True):
                 st.balloons()
                 st.session_state['show_fireworks'] = False
 
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-exception-caught
             st.error(f"An error occurred while generating the QR code: {str(e)}")
 
 # Footer
