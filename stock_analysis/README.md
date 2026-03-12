@@ -33,7 +33,7 @@ The application has been refactored into a multi-page Dash structure for improve
    ```
 4. Run the Dash app:
    ```bash
-   python stock-analysis/app.py
+   python stock_analysis/app.py
    ```
 5. Open your web browser to the provided local URL (typically `http://localhost:8050`).
 
@@ -42,13 +42,13 @@ The application has been refactored into a multi-page Dash structure for improve
 To run the unit tests for this project, use `pytest` from the root directory:
 
 ```bash
-python3 -m pytest stock-analysis/tests/
+python3 -m pytest stock_analysis/tests/
 ```
 
 Individual tests can also be run specifically:
 
 ```bash
-python3 -m pytest stock-analysis/tests/test_persistence.py
+python3 -m pytest stock_analysis/tests/test_persistence.py
 ```
 
 ## How to use
@@ -66,10 +66,10 @@ To run batch mode, provide the `--ticker` argument followed by a ticker or a sem
 
 ```bash
 # Run for a single ticker
-python stock-analysis/app.py --ticker "MSFT"
+python stock_analysis/app.py --ticker "MSFT"
 
 # Run for multiple tickers (processed concurrently)
-python stock-analysis/app.py --ticker "MSFT;AAPL;GOOGL"
+python stock_analysis/app.py --ticker "MSFT;AAPL;GOOGL"
 ```
 
 The batch mode will automatically use the maximum available date range (e.g., last 5 years up to today) and will save the computed statistics to `data/stats.json` for later viewing in the web interface.

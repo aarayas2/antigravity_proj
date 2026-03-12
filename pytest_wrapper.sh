@@ -1,3 +1,3 @@
 #!/bin/bash
-export PYTHONPATH=stock-analysis
+export PYTHONPATH=stock_analysis
 python3 -m pytest "$@"
