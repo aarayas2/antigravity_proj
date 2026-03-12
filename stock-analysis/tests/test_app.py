@@ -13,11 +13,11 @@ class TestApp:
     @patch('app.get_date_ranges')
     def test_run_batch_mode_no_valid_tickers(self, mock_get_date_ranges):
         result = run_batch_mode("")
-        assert result is None
+        assert result == {}
         mock_get_date_ranges.assert_not_called()
 
         result2 = run_batch_mode("   ;  ")
-        assert result2 is None
+        assert result2 == {}
         mock_get_date_ranges.assert_not_called()
 
     @patch('app.stats_manager')
