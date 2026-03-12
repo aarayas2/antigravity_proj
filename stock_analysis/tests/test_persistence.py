@@ -5,7 +5,7 @@ import os
 from unittest.mock import patch, mock_open
 
 
-# Add the parent directory of stock-analysis to sys.path so we can import it
+# Add the parent directory of stock_analysis to sys.path so we can import it
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from persistence import JsonStatsStorage, StatsManager, StatsStorageStrategy
