@@ -1,10 +1,16 @@
-from utils import StockDataCache
+"""
+Tests for path traversal vulnerabilities.
+"""
+
 import os
+from utils import StockDataCache  # pylint: disable=import-error
 
 def test_ticker_sanitization():
+    """Test that tickers are properly sanitized to prevent path traversal."""
     cache = StockDataCache(data_dir="test_data")
 
     # Valid tickers
+    # pylint: disable=protected-access
     assert "AAPL" in cache._get_file_path("AAPL")
     assert "BRK-B" in cache._get_file_path("BRK-B")
     assert "^GSPC" in cache._get_file_path("^GSPC")

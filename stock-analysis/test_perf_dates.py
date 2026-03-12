@@ -1,18 +1,21 @@
-import time
-import sys
+"""
+Performance test for batch analysis.
+"""
 import contextlib
 import io
 import os
-import datetime
+import sys
+import time
+from unittest.mock import patch
 
 sys.path.append(os.path.abspath('.'))
-import app
-from unittest.mock import patch
+import app  # pylint: disable=wrong-import-position,import-error
 
 # Mock to bypass actual downloading
 @patch('app.run_analysis_for_ticker')
 @patch('app.stats_manager.save_stats_batch')
-def test_perf(mock_save_batch, mock_run):
+def test_perf(mock_save_batch, mock_run):  # pylint: disable=unused-argument
+    """Test performance of batch mode analysis with mocks."""
     mock_run.return_value = {
         "metrics": {"Strategy1": {"Win Rate": "50%"}},
         "sections": [],
@@ -23,10 +26,10 @@ def test_perf(mock_save_batch, mock_run):
 
     start_time = time.time()
     with contextlib.redirect_stdout(io.StringIO()):
-        app.run_batch_mode(tickers)
+        app.run_batch_mode(tickers)  # pylint: disable=no-member
     end_time = time.time()
 
     print(f"Time taken: {end_time - start_time:.4f} seconds")
 
 if __name__ == '__main__':
-    test_perf()
+    test_perf()  # pylint: disable=no-value-for-parameter
