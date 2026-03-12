@@ -28,8 +28,8 @@ class TestStockDataCacheCoverage(unittest.TestCase):
                     self.cache._get_file_path("dummy")
 
     @patch('os.path.exists')
-    @patch('pandas.read_json')
-    @patch('pandas.DataFrame.to_json')
+    @patch('utils.pd.read_json')
+    @patch.object(pd.DataFrame, 'to_json')
     @patch('utils.StockDataCache._download_from_yf')
     def test_get_data_cache_hit_all_data_available(self, mock_download, mock_to_json, mock_read_json, mock_exists):
         mock_exists.return_value = True
@@ -52,8 +52,8 @@ class TestStockDataCacheCoverage(unittest.TestCase):
         self.assertEqual(len(result), 3)
 
     @patch('os.path.exists')
-    @patch('pandas.read_json')
-    @patch('pandas.DataFrame.to_json')
+    @patch('utils.pd.read_json')
+    @patch.object(pd.DataFrame, 'to_json')
     @patch('utils.StockDataCache._download_from_yf')
     def test_get_data_cache_hit_older_data_needed(self, mock_download, mock_to_json, mock_read_json, mock_exists):
         mock_exists.return_value = True
@@ -83,8 +83,8 @@ class TestStockDataCacheCoverage(unittest.TestCase):
         self.assertEqual(len(result), 10)
 
     @patch('os.path.exists')
-    @patch('pandas.read_json')
-    @patch('pandas.DataFrame.to_json')
+    @patch('utils.pd.read_json')
+    @patch.object(pd.DataFrame, 'to_json')
     @patch('utils.StockDataCache._download_from_yf')
     def test_get_data_cache_hit_newer_data_needed(self, mock_download, mock_to_json, mock_read_json, mock_exists):
         mock_exists.return_value = True
@@ -114,7 +114,7 @@ class TestStockDataCacheCoverage(unittest.TestCase):
         self.assertEqual(len(result), 10)
 
     @patch('os.path.exists')
-    @patch('pandas.read_json')
+    @patch('utils.pd.read_json')
     @patch('utils.StockDataCache._download_and_save_full')
     def test_get_data_cache_hit_empty_cache(self, mock_download_full, mock_read_json, mock_exists):
         mock_exists.return_value = True
@@ -135,7 +135,7 @@ class TestStockDataCacheCoverage(unittest.TestCase):
         self.assertEqual(len(result), 5)
 
     @patch('os.path.exists')
-    @patch('pandas.read_json')
+    @patch('utils.pd.read_json')
     @patch('utils.StockDataCache._download_and_save_full')
     def test_get_data_cache_exception_handling(self, mock_download_full, mock_read_json, mock_exists):
         mock_exists.return_value = True

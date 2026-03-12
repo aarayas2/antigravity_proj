@@ -8,6 +8,8 @@ def test_needs_subplots():
     """Test needs_subplots returns False."""
     assert needs_subplots() is False
 
+from unittest.mock import patch
+
 def test_add_traces_no_bbu_column():
     """Test add_traces does nothing when BBU column is missing."""
     fig = MagicMock()
@@ -15,7 +17,8 @@ def test_add_traces_no_bbu_column():
     add_traces(fig, df, main_row=1, sub_row=2)
     fig.add_trace.assert_not_called()
 
-def test_add_traces_with_bbu_column_main_row():
+@patch('strategy.BollingerBands.go.Scatter')
+def test_add_traces_with_bbu_column_main_row(mock_scatter):
     """Test add_traces adds 3 traces to main_row when BBU column is present."""
     fig = MagicMock()
     df = pd.DataFrame({
@@ -23,14 +26,21 @@ def test_add_traces_with_bbu_column_main_row():
         'BBL_20_2.0_2.0': [8, 18],
         'BBM_20_2.0_2.0': [10, 20]
     })
+    
+    mock_scatter_instance = MagicMock()
+    mock_scatter.return_value = mock_scatter_instance
+    
     add_traces(fig, df, main_row=1, sub_row=None)
     assert fig.add_trace.call_count == 3
     # Check that row=1, col=1 was passed to add_trace
     for call in fig.add_trace.call_args_list:
         assert call[1]['row'] == 1
         assert call[1]['col'] == 1
+        # ensure it passes the mocked scatter
+        assert call[0][0] == mock_scatter_instance
 
-def test_add_traces_with_bbu_column_no_main_row():
+@patch('strategy.BollingerBands.go.Scatter')
+def test_add_traces_with_bbu_column_no_main_row(mock_scatter):
     """Test add_traces adds 3 traces without row/col kwargs when main_row is None."""
     fig = MagicMock()
     df = pd.DataFrame({
@@ -38,12 +48,17 @@ def test_add_traces_with_bbu_column_no_main_row():
         'BBL_20_2.0_2.0': [8, 18],
         'BBM_20_2.0_2.0': [10, 20]
     })
+    
+    mock_scatter_instance = MagicMock()
+    mock_scatter.return_value = mock_scatter_instance
+    
     add_traces(fig, df, main_row=None, sub_row=None)
     assert fig.add_trace.call_count == 3
     # Check that row/col weren't passed
     for call in fig.add_trace.call_args_list:
         assert 'row' not in call[1]
         assert 'col' not in call[1]
+        assert call[0][0] == mock_scatter_instance
 
 def test_get_signals_no_signal_column():
     """Test get_signals when DataFrame does not have a 'Signal' column."""
@@ -115,16 +130,16 @@ def test_apply_strategy_normal():
     df = pd.DataFrame({'Close': [10.0] * 19})
 
     # Row 19: Close = 10.0. BBM=10.0, BBU=10.0, BBL=10.0. No signal.
-    df.loc[19] = {'Close': 10.0}
+    df.loc[19, 'Close'] = 10.0
 
     # Row 20: Close drops to 5.0. BBL will be higher than 5.0 -> Buy signal (1.0)
-    df.loc[20] = {'Close': 5.0}
+    df.loc[20, 'Close'] = 5.0
 
     # Row 21: Close spikes to 20.0. BBU will be lower than 20.0 -> Sell signal (-1.0)
-    df.loc[21] = {'Close': 20.0}
+    df.loc[21, 'Close'] = 20.0
 
     # Row 22: Close returns to 10.0. Within bands -> Hold signal (0.0)
-    df.loc[22] = {'Close': 10.0}
+    df.loc[22, 'Close'] = 10.0
 
     result_df = apply_strategy(df)
 
@@ -171,7 +186,7 @@ def test_get_signals_no_signals_in_column():
     # When the column exists, it filters rows. The resulting DataFrame is empty but maintains columns.
     # So we compare its shape to (0, 2) or use assert_frame_equal with check_index_type=False etc.
     # Actually, if we just want to assert they are empty, we can check .empty or compare to an empty DF with same columns.
-    expected_empty = pd.DataFrame(columns=['Close', 'Signal']).astype({'Close': float, 'Signal': float})
+    expected_empty = pd.DataFrame(columns=['Close', 'Signal']).astype(float)
     pd.testing.assert_frame_equal(buy_signals, expected_empty, check_index_type=False)
     pd.testing.assert_frame_equal(sell_signals, expected_empty, check_index_type=False)
 

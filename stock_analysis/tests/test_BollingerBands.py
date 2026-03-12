@@ -128,7 +128,10 @@ from unittest.mock import MagicMock
 def test_needs_subplots():
     assert needs_subplots() is False
 
-def test_add_traces_with_subplots():
+from unittest.mock import patch
+
+@patch('strategy.BollingerBands.go.Scatter')
+def test_add_traces_with_subplots(mock_scatter):
     fig = MagicMock()
     df = pd.DataFrame({
         'BBU_20_2.0_2.0': [100.0, 105.0],
@@ -146,7 +149,8 @@ def test_add_traces_with_subplots():
         assert kwargs.get('row') == 1
         assert kwargs.get('col') == 1
 
-def test_add_traces_no_subplots():
+@patch('strategy.BollingerBands.go.Scatter')
+def test_add_traces_no_subplots(mock_scatter):
     fig = MagicMock()
     df = pd.DataFrame({
         'BBU_20_2.0_2.0': [100.0, 105.0],

@@ -72,14 +72,14 @@ class TestLoadData(unittest.TestCase):
             mock_download.return_value = expected_df
 
             # Mock DataFrame.to_json to avoid writing to disk during test
-            with patch('pandas.DataFrame.to_json') as mock_to_json:
+            with patch.object(pd.DataFrame, 'to_json') as mock_to_json:
                 result = load_data(ticker, start_date, end_date)
 
                 mock_download.assert_called_once()
                 mock_to_json.assert_called_once()
                 self.assertEqual(len(result), 2)
 
-    @patch('pandas.read_json')
+    @patch('utils.pd.read_json')
     @patch('utils.yf.download')
     @patch('os.makedirs')
     @patch('os.path.exists')
@@ -100,7 +100,7 @@ class TestLoadData(unittest.TestCase):
             full_df = pd.DataFrame({'Close': range(len(full_index))}, index=full_index)
             mock_download.return_value = full_df
 
-            with patch('pandas.DataFrame.to_json') as mock_to_json:
+            with patch.object(pd.DataFrame, 'to_json') as mock_to_json:
                 result = load_data(ticker, start_date, end_date)
 
                 # Verify that yfinance was called correctly
@@ -134,7 +134,7 @@ class TestLoadData(unittest.TestCase):
             mock_download.assert_called_once()
             self.assertIsNone(result)
 
-    @patch('pandas.read_json')
+    @patch('utils.pd.read_json')
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_cache_hit(self, mock_exists, mock_makedirs, mock_read_json):
@@ -161,7 +161,7 @@ class TestLoadData(unittest.TestCase):
                 # Verify result contains the filtered dates
                 self.assertEqual(len(result), 3)
 
-    @patch('pandas.read_json')
+    @patch('utils.pd.read_json')
     @patch('utils.yf.download')
     @patch('os.makedirs')
     @patch('os.path.exists')
@@ -184,14 +184,14 @@ class TestLoadData(unittest.TestCase):
             older_df = pd.DataFrame({'Close': range(len(older_index))}, index=older_index)
             mock_download.return_value = older_df
 
-            with patch('pandas.DataFrame.to_json') as mock_to_json:
+            with patch.object(pd.DataFrame, 'to_json') as mock_to_json:
                 result = load_data(ticker, start_date, end_date)
 
                 mock_download.assert_called_once()
                 mock_to_json.assert_called_once()
                 self.assertEqual(len(result), 10)
 
-    @patch('pandas.read_json')
+    @patch('utils.pd.read_json')
     @patch('utils.yf.download')
     @patch('os.makedirs')
     @patch('os.path.exists')
@@ -214,14 +214,14 @@ class TestLoadData(unittest.TestCase):
             newer_df = pd.DataFrame({'Close': range(len(newer_index))}, index=newer_index)
             mock_download.return_value = newer_df
 
-            with patch('pandas.DataFrame.to_json') as mock_to_json:
+            with patch.object(pd.DataFrame, 'to_json') as mock_to_json:
                 result = load_data(ticker, start_date, end_date)
 
                 mock_download.assert_called_once()
                 mock_to_json.assert_called_once()
                 self.assertEqual(len(result), 10)
 
-    @patch('pandas.read_json')
+    @patch('utils.pd.read_json')
     @patch('utils.yf.download')
     @patch('os.makedirs')
     @patch('os.path.exists')
@@ -242,7 +242,7 @@ class TestLoadData(unittest.TestCase):
             full_df = pd.DataFrame({'Close': range(len(full_index))}, index=full_index)
             mock_download.return_value = full_df
 
-            with patch('pandas.DataFrame.to_json') as mock_to_json:
+            with patch.object(pd.DataFrame, 'to_json') as mock_to_json:
                 result = load_data(ticker, start_date, end_date)
 
                 mock_download.assert_called_once()

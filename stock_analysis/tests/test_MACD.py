@@ -87,7 +87,10 @@ def test_macd_needs_subplots():
     """Test needs_subplots returns True as MACD uses a sub-panel."""
     assert needs_subplots() is True
 
-def test_macd_add_traces():
+from unittest.mock import patch
+
+@patch('strategy.MACD.go.Scatter')
+def test_macd_add_traces(mock_scatter):
     """Test add_traces adds MACD Line, Signal Line, and Histogram traces."""
     fig = MagicMock()
     df = pd.DataFrame({
@@ -107,7 +110,8 @@ def test_macd_add_traces():
         assert kwargs.get('row') == 2
         assert kwargs.get('col') == 1
 
-def test_macd_add_traces_no_columns():
+@patch('strategy.MACD.go.Scatter')
+def test_macd_add_traces_no_columns(mock_scatter):
     """Test add_traces does nothing if MACD columns are missing."""
     fig = MagicMock()
     df = pd.DataFrame({'Close': [100.0, 101.0]})

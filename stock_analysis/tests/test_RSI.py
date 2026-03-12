@@ -78,7 +78,10 @@ def test_rsi_empty_df():
 def test_needs_subplots():
     assert needs_subplots() is True
 
-def test_add_traces():
+from unittest.mock import patch
+
+@patch('strategy.RSI.go.Scatter')
+def test_add_traces(mock_scatter):
     fig = MagicMock()
     df = pd.DataFrame({
         'RSI_14': [50.0, 60.0]
