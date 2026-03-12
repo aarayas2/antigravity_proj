@@ -1,7 +1,12 @@
-import pytest
+"""Tests for the WiFi QR code generator application."""
+# pylint: disable=duplicate-code
+
 import os
-from streamlit.testing.v1 import AppTest
 from unittest.mock import patch
+
+# pylint: disable=import-error
+from streamlit.testing.v1 import AppTest
+
 
 def test_qr_generation_error():
     """
@@ -18,6 +23,7 @@ def test_qr_generation_error():
 
     # Fill in the required fields
     # Network Name (SSID)
+    # pylint: disable=no-member
     at.text_input[0].set_value("My WiFi")
 
     # Password
@@ -34,5 +40,10 @@ def test_qr_generation_error():
         assert len(at.error) > 0, "Expected an error message to be displayed"
 
         # Ensure the error message matches the expected output format
-        expected_error_text = "An error occurred while generating the QR code: Test QR generation error"
-        assert at.error[0].value == expected_error_text, f"Expected '{expected_error_text}' but got '{at.error[0].value}'"
+        expected_error_text = (
+            "An error occurred while generating the QR code: "
+            "Test QR generation error"
+        )
+        assert at.error[0].value == expected_error_text, (
+            f"Expected '{expected_error_text}' but got '{at.error[0].value}'"
+        )
