@@ -4,29 +4,35 @@ Trade Visualization Module
 
 Architectural Overview:
 -----------------------
-This module introduces the Factory design pattern (via `TradeTooltipFactory`) to encapsulate the complex logic required for generating interactive trade duration windows with rich tooltips. 
+This module introduces the Factory design pattern (via `TradeTooltipFactory`) to
+encapsulate the complex logic required for generating interactive trade
+duration windows with rich tooltips.
 
 Refactoring Decision:
-Plotly's `add_vrect` does not support interactive hover tooltips natively. To achieve the required functionality, we must use a shaded `go.Scatter` trace with `fill='toself'`. Doing this inline within the main `app.py` rendering function would severely bloat the UI code, making it difficult to read, maintain, and test. By extracting this logic into a dedicated Factory, we achieve the following:
-1.  **Separation of Concerns:** The main UI code focuses on layout and high-level charting, while this module handles the specific data extraction, formatting, and trace generation for trade windows.
-2.  **Testability:** The tooltip string generation and trace configuration can be unit-tested independently of the Dash application context.
-3.  **Scalability:** If future requirements demand different visual representations of trades or more complex tooltip data, the changes are isolated to this Factory.
+Plotly's `add_vrect` does not support interactive hover tooltips natively.
+To achieve the required functionality, we use a shaded `go.Scatter` trace
+with `fill='toself'`. Doing this inline would severely bloat the UI code.
+By extracting this logic into a dedicated Factory, we achieve:
+1. Separation of Concerns
+2. Testability
+3. Scalability
 
 Error Handling and Robustness:
 ------------------------------
-The factory includes safeguards against malformed or missing data in the `trades_history` dictionaries:
--   **Missing Dates:** It checks for the existence of `entry_date` and `exit_date`. If `exit_date` is missing (e.g., an open trade), it gracefully handles it by indicating "Open" in the tooltip and using a default or current date for visualization if provided.
--   **Missing Prices:** It verifies `entry_price` and `exit_price` are present and valid numbers.
--   **Division by Zero:** When calculating the percentage gain, it explicitly checks if `entry_price` is zero to prevent `ZeroDivisionError`, falling back to a 0.00% gain or "N/A".
--   **Type Hinting:** Comprehensive type hinting is used to ensure data consistency and aid IDE support.
+The factory includes safeguards against malformed or missing data:
+- Missing Dates
+- Missing Prices
+- Division by Zero
+- Type Hinting
 """
 
 from typing import Dict, Any, Optional
-import plotly.graph_objects as go
+
 import pandas as pd
+import plotly.graph_objects as go  # pylint: disable=import-error
 
 
-class TradeTooltipFactory:
+class TradeTooltipFactory:  # pylint: disable=too-few-public-methods
     """
     Factory class responsible for generating Plotly Scatter traces representing
     trade duration windows with interactive hover tooltips.
@@ -44,7 +50,7 @@ class TradeTooltipFactory:
         self.y_max = y_max
         self._y_coords = (y_min, y_max, y_max, y_min, y_min)
 
-    def create_trace(self, trade: Dict[str, Any]) -> Optional[go.Scatter]:
+    def create_trace(self, trade: Dict[str, Any]) -> Optional[go.Scatter]:  # pylint: disable=too-many-locals,too-many-branches,too-many-statements
         """
         Creates a go.Scatter trace for a single trade.
 
@@ -56,7 +62,7 @@ class TradeTooltipFactory:
             Optional[go.Scatter]: The configured Scatter trace, or None if the
                 trade data is critically invalid.
         """
-        try:
+        try:  # pylint: disable=broad-exception-caught
             # 1. Extract and Validate Dates
             entry_date = trade.get('entry_date')
             exit_date = trade.get('exit_date')
@@ -80,10 +86,12 @@ class TradeTooltipFactory:
             # 2. Extract and Validate Prices
             entry_price = trade.get('entry_price')
             exit_price = trade.get('exit_price')
-            
+
             # Default missing prices to None for the template
-            if pd.isna(entry_price): entry_price = None
-            if pd.isna(exit_price): exit_price = None
+            if pd.isna(entry_price):
+                entry_price = None
+            if pd.isna(exit_price):
+                exit_price = None
 
             # 3. Calculate Percentage Gain
             pct_gain = 0.0
@@ -106,18 +114,30 @@ class TradeTooltipFactory:
 
             # 5. Format Tooltip Strings
             date_format = "%Y-%m-%d"
-            try:
-                start_str = entry_date.strftime(date_format) if hasattr(entry_date, 'strftime') else str(entry_date)
-            except Exception:
+            try:  # pylint: disable=broad-exception-caught
+                if hasattr(entry_date, 'strftime'):
+                    start_str = entry_date.strftime(date_format)
+                else:
+                    start_str = str(entry_date)
+            except Exception:  # pylint: disable=broad-exception-caught
                 start_str = "Unknown"
-                
-            try:
-                end_str = "Open" if is_open else (exit_date.strftime(date_format) if hasattr(exit_date, 'strftime') else str(exit_date))
-            except Exception:
+
+            try:  # pylint: disable=broad-exception-caught
+                if is_open:
+                    end_str = "Open"
+                else:
+                    if hasattr(exit_date, 'strftime'):
+                        end_str = exit_date.strftime(date_format)
+                    else:
+                        end_str = str(exit_date)
+            except Exception:  # pylint: disable=broad-exception-caught
                 end_str = "Unknown"
 
             entry_p_str = f"${entry_price:.2f}" if entry_price is not None else "N/A"
-            exit_p_str = f"${exit_price:.2f}" if exit_price is not None else ("Open" if is_open else "N/A")
+            if exit_price is not None:
+                exit_p_str = f"${exit_price:.2f}"
+            else:
+                exit_p_str = "Open" if is_open else "N/A"
 
             hover_text = (
                 f"<b>Trade Duration</b><br>"
@@ -129,7 +149,8 @@ class TradeTooltipFactory:
             )
 
             # 6. Construct the Polygon for the shaded area
-            # We draw a rectangle using 4 points: (start, ymin), (start, ymax), (end, ymax), (end, ymin), (start, ymin) to close
+            # We draw a rectangle using 4 points:
+            # (start, ymin), (start, ymax), (end, ymax), (end, ymin), (start, ymin) to close
             x_coords = (entry_date, entry_date, exit_date, exit_date, entry_date)
 
             trace = go.Scatter(
@@ -137,19 +158,19 @@ class TradeTooltipFactory:
                 y=self._y_coords,
                 fill='toself',
                 fillcolor=color,
-                line=dict(width=0),
+                line={"width": 0},
                 mode='lines',
                 name='Trade',
                 showlegend=False,
                 hoveron='fills',
                 hoverinfo='text',
                 text=hover_text,
-                hoverlabel=dict(bgcolor=hover_bg, font_size=12, font_family="Arial")
+                hoverlabel={"bgcolor": hover_bg, "font_size": 12, "font_family": "Arial"}
             )
 
             return trace
 
-        except Exception as e:
+        except Exception:  # pylint: disable=broad-exception-caught
             # In a production app, we would log this error.
             # print(f"Error generating trade tooltip trace: {e}")
             return None
