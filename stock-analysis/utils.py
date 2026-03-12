@@ -1,11 +1,20 @@
-import os
-import yfinance as yf
-import pandas as pd
+"""
+Utility functions for data loading, caching, and backtesting.
+"""
+
 import datetime
+import os
 import re
 
+import pandas as pd
+import yfinance as yf
 
-class StockDataCache:
+from persistence import StatsManager, JsonStatsStorage  # pylint: disable=import-error
+from strategy import STRATEGIES  # pylint: disable=import-error
+
+
+class StockDataCache:  # pylint: disable=too-few-public-methods
+    """Cache implementation for Yahoo Finance stock data."""
     def __init__(self, data_dir="data"):
         # Make the data_dir relative to the location of utils.py
         base_dir = os.path.dirname(os.path.abspath(__file__))
@@ -50,7 +59,7 @@ class StockDataCache:
         print(f"Cache hit for {ticker}. All requested data available locally.")
         return cached_df
 
-    def _handle_partial_hit(
+    def _handle_partial_hit(  # pylint: disable=too-many-arguments,too-many-positional-arguments
         self,
         ticker: str,
         start_date: datetime.date,
@@ -65,32 +74,32 @@ class StockDataCache:
         dfs_to_concat = [cached_df]
 
         # 1. Check if we need older data
-        if start_date < first_cached_date:
+        if start_date <= first_cached_date - datetime.timedelta(days=1):
             fetch_end_old = first_cached_date - datetime.timedelta(days=1)
-            if start_date <= fetch_end_old:
-                print(
-                    f"Partial hit for {ticker}. Fetching older data from {start_date} to {fetch_end_old}."
-                )
-                older_data = self._download_from_yf(
-                    ticker, start_date, fetch_end_old + datetime.timedelta(days=1)
-                )
-                if older_data is not None and not older_data.empty:
-                    dfs_to_concat.append(older_data)
-                    needs_save = True
+            print(
+                f"Partial hit for {ticker}. "
+                f"Fetching older data from {start_date} to {fetch_end_old}."
+            )
+            older_data = self._download_from_yf(
+                ticker, start_date, fetch_end_old + datetime.timedelta(days=1)
+            )
+            if older_data is not None and not older_data.empty:
+                dfs_to_concat.append(older_data)
+                needs_save = True
 
         # 2. Check if we need newer data
-        if end_date > last_cached_date:
+        if end_date >= last_cached_date + datetime.timedelta(days=1):
             fetch_start_new = last_cached_date + datetime.timedelta(days=1)
-            if fetch_start_new <= end_date:
-                print(
-                    f"Partial hit for {ticker}. Fetching newer data from {fetch_start_new} to {end_date}."
-                )
-                newer_data = self._download_from_yf(
-                    ticker, fetch_start_new, end_date + datetime.timedelta(days=1)
-                )
-                if newer_data is not None and not newer_data.empty:
-                    dfs_to_concat.append(newer_data)
-                    needs_save = True
+            print(
+                f"Partial hit for {ticker}. "
+                f"Fetching newer data from {fetch_start_new} to {end_date}."
+            )
+            newer_data = self._download_from_yf(
+                ticker, fetch_start_new, end_date + datetime.timedelta(days=1)
+            )
+            if newer_data is not None and not newer_data.empty:
+                dfs_to_concat.append(newer_data)
+                needs_save = True
 
         if needs_save:
             # Combine all data
@@ -109,13 +118,14 @@ class StockDataCache:
     def get_data(
         self, ticker: str, start_date: datetime.date, end_date: datetime.date
     ) -> pd.DataFrame:
+        """Retrieves data from cache or downloads it if not available."""
         file_path = self._get_file_path(ticker)
 
         cached_df = None
         if os.path.exists(file_path):
             try:
                 cached_df = pd.read_json(file_path, orient="table")
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-exception-caught
                 print(f"Error reading cache for {ticker}: {e}. Redownloading.")
                 cached_df = None
 
@@ -166,7 +176,7 @@ class StockDataCache:
             if isinstance(df.columns, pd.MultiIndex):
                 df.columns = df.columns.get_level_values(0)
             return df
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"Error downloading data for {ticker}: {e}")
             return None
 
@@ -182,9 +192,6 @@ def load_data(
     return _cache.get_data(ticker, start_date, end_date)
 
 
-from strategy import STRATEGIES  # noqa: E402
-
-
 def apply_strategy(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
     """Applies the selected trading strategy and calculates indicators."""
     if strategy in STRATEGIES:
@@ -193,6 +200,7 @@ def apply_strategy(df: pd.DataFrame, strategy: str) -> pd.DataFrame:
 
 
 def _create_trade_record(entry_date, exit_date, entry_price, exit_price):
+    """Creates a dictionary representing a completed or open trade."""
     return {
         "entry_date": entry_date,
         "exit_date": exit_date,
@@ -214,7 +222,8 @@ class _TradeEvaluator:
         self.trades_history = []
 
     def process_buy(self, date, price):
-        if self.capital > price and price > 0:
+        """Processes a buy signal."""
+        if self.capital > price > 0:
             shares_to_buy = self.capital // price
             self.position_size += shares_to_buy
             self.capital -= shares_to_buy * price
@@ -222,6 +231,7 @@ class _TradeEvaluator:
             self.buy_date = date
 
     def process_sell(self, date, price):
+        """Processes a sell signal."""
         if self.position_size > 0:
             self.capital += self.position_size * price
             self.trades_history.append(
@@ -232,6 +242,7 @@ class _TradeEvaluator:
             self.buy_date = None
 
     def close_open_position(self, exit_date, exit_price):
+        """Closes any open position at the end of the testing period."""
         if self.position_size > 0:
             self.capital += self.position_size * exit_price
             self.trades_history.append(
@@ -294,7 +305,7 @@ def _has_valid_signals(df: pd.DataFrame) -> bool:
     return True
 
 
-def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:  # noqa: C901
+def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:  # pylint: disable=unused-argument
     """Calculates basic performance metrics from the generated signals."""
     if not _has_valid_signals(df):
         return {
@@ -322,8 +333,6 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:  # noqa: C901
     return _compile_performance_metrics(initial_capital, final_capital, trades_history)
 
 
-from persistence import StatsManager, JsonStatsStorage
-
 # Initialize Persistence Layer
 DATA_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data")
 STATS_FILE = os.path.join(DATA_DIR, "stats.json")
@@ -332,6 +341,7 @@ stats_manager = StatsManager(JsonStatsStorage(STATS_FILE))
 
 # Date helpers
 def get_date_ranges():
+    """Returns a dictionary with common date ranges and configurations."""
     max_date = datetime.date.today()
     min_date = max_date - datetime.timedelta(days=365 * 5)
     default_start = max_date - datetime.timedelta(days=365)
