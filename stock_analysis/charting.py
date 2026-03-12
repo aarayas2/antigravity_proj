@@ -61,16 +61,13 @@ def _setup_figure(strategy: str) -> Tuple[go.Figure, Optional[int], Optional[int
         sub_row = None
     return fig, main_row, sub_row
 
-def _add_traces(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-branches
+def _add_trade_traces(
     fig: go.Figure,
     df_with_signals: pd.DataFrame,
-    strategy: str,
     metrics: Dict[str, Any],
-    main_row: Optional[int],
-    sub_row: Optional[int]
+    main_row: Optional[int]
 ) -> None:
-    """Adds all traces (trades, candlesticks, strategy lines, signals) to the figure."""
-    # Draw trade duration windows with tooltips
+    """Draws trade duration windows with tooltips."""
     trades_history = metrics.get("Trades History", [])
     if trades_history and not df_with_signals.empty:
         y_min = df_with_signals['Low'].min() * 0.95
@@ -85,7 +82,12 @@ def _add_traces(  # pylint: disable=too-many-arguments,too-many-positional-argum
                 else:
                     fig.add_trace(trade_trace)
 
-    # Main Candlestick Chart
+def _add_candlestick_trace(
+    fig: go.Figure,
+    df_with_signals: pd.DataFrame,
+    main_row: Optional[int]
+) -> None:
+    """Adds the main candlestick chart."""
     candlestick = go.Candlestick(
         x=df_with_signals.index,
         open=df_with_signals['Open'],
@@ -99,11 +101,24 @@ def _add_traces(  # pylint: disable=too-many-arguments,too-many-positional-argum
     else:
         fig.add_trace(candlestick)
 
-    # Add Strategy Traces
+def _add_strategy_traces(
+    fig: go.Figure,
+    df_with_signals: pd.DataFrame,
+    strategy: str,
+    main_row: Optional[int],
+    sub_row: Optional[int]
+) -> None:
+    """Adds strategy-specific traces."""
     if strategy in STRATEGIES:
         STRATEGIES[strategy]["add_traces"](fig, df_with_signals, main_row, sub_row)
 
-    # Plot Buy/Sell signals on main chart
+def _add_signal_traces(
+    fig: go.Figure,
+    df_with_signals: pd.DataFrame,
+    strategy: str,
+    main_row: Optional[int]
+) -> None:
+    """Plots Buy/Sell signals on the main chart."""
     buy_signals = pd.DataFrame()
     sell_signals = pd.DataFrame()
     if strategy in STRATEGIES:
@@ -132,6 +147,20 @@ def _add_traces(  # pylint: disable=too-many-arguments,too-many-positional-argum
             fig.add_trace(trace, row=main_row, col=1)
         else:
             fig.add_trace(trace)
+
+def _add_traces(  # pylint: disable=too-many-arguments,too-many-positional-arguments
+    fig: go.Figure,
+    df_with_signals: pd.DataFrame,
+    strategy: str,
+    metrics: Dict[str, Any],
+    main_row: Optional[int],
+    sub_row: Optional[int]
+) -> None:
+    """Adds all traces (trades, candlesticks, strategy lines, signals) to the figure."""
+    _add_trade_traces(fig, df_with_signals, metrics, main_row)
+    _add_candlestick_trace(fig, df_with_signals, main_row)
+    _add_strategy_traces(fig, df_with_signals, strategy, main_row, sub_row)
+    _add_signal_traces(fig, df_with_signals, strategy, main_row)
 
 def _update_layout(fig: go.Figure, main_row: Optional[int]) -> None:
     """Updates figure layout and axes visibility."""
