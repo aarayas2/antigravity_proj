@@ -8,13 +8,14 @@ It uses the Factory pattern (`TradeTooltipFactory`) for drawing complex
 trade window visualizations.
 """
 
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
-import pandas as pd
 from typing import Dict, Any, Tuple, Optional
 
-from strategy import STRATEGIES
-from trade_visuals import TradeTooltipFactory
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
+
+from strategy import STRATEGIES  # pylint: disable=import-error
+from trade_visuals import TradeTooltipFactory  # pylint: disable=import-error
 
 class MockFig:
     """
@@ -23,17 +24,21 @@ class MockFig:
     """
     def __init__(self, fig):
         self.fig = fig
-        
-    def add_trace(self, trace, row=None, col=None):
+
+    def add_trace(self, trace, row=None, col=None):  # pylint: disable=unused-argument
+        """Add trace to figure."""
         self.fig.add_trace(trace)
-        
+
     def update_layout(self, **kwargs):
+        """Update figure layout."""
         self.fig.update_layout(**kwargs)
-        
+
     def add_vrect(self, **kwargs):
+        """Add vertical rectangle."""
         self.fig.add_vrect(**kwargs)
-        
+
     def add_hline(self, **kwargs):
+        """Add horizontal line."""
         self.fig.add_hline(**kwargs)
 
 def _setup_figure(strategy: str) -> Tuple[go.Figure, Optional[int], Optional[int]]:
@@ -56,7 +61,7 @@ def _setup_figure(strategy: str) -> Tuple[go.Figure, Optional[int], Optional[int
         sub_row = None
     return fig, main_row, sub_row
 
-def _add_traces(
+def _add_traces(  # pylint: disable=too-many-arguments,too-many-positional-arguments,too-many-locals,too-many-branches
     fig: go.Figure,
     df_with_signals: pd.DataFrame,
     strategy: str,
@@ -71,7 +76,7 @@ def _add_traces(
         y_min = df_with_signals['Low'].min() * 0.95
         y_max = df_with_signals['High'].max() * 1.05
         tooltip_factory = TradeTooltipFactory(y_min=y_min, y_max=y_max)
-        
+
         for trade in trades_history:
             trade_trace = tooltip_factory.create_trace(trade)
             if trade_trace:
@@ -103,22 +108,24 @@ def _add_traces(
     sell_signals = pd.DataFrame()
     if strategy in STRATEGIES:
         buy_signals, sell_signals = STRATEGIES[strategy]["get_signals"](df_with_signals)
-    
+
     if not buy_signals.empty:
         trace = go.Scatter(
             x=buy_signals.index, y=buy_signals['Low'] * 0.98,
-            mode='markers', marker=dict(symbol='triangle-up', size=12, color='green'),
+            mode='markers',
+            marker={"symbol": 'triangle-up', "size": 12, "color": 'green'},
             name='Buy Signal'
         )
         if main_row:
             fig.add_trace(trace, row=main_row, col=1)
         else:
             fig.add_trace(trace)
-        
+
     if not sell_signals.empty:
         trace = go.Scatter(
             x=sell_signals.index, y=sell_signals['High'] * 1.02,
-            mode='markers', marker=dict(symbol='triangle-down', size=12, color='red'),
+            mode='markers',
+            marker={"symbol": 'triangle-down', "size": 12, "color": 'red'},
             name='Sell Signal'
         )
         if main_row:
@@ -131,13 +138,17 @@ def _update_layout(fig: go.Figure, main_row: Optional[int]) -> None:
     fig.update_layout(
         height=700, template="plotly_dark",
         xaxis_rangeslider_visible=False,
-        margin=dict(l=0, r=0, t=30, b=0)
+        margin={"l": 0, "r": 0, "t": 30, "b": 0}
     )
     if main_row:
-         # Ensure rangeslider off for all subplots
-         fig.update_xaxes(rangeslider_visible=False)
+        # Ensure rangeslider off for all subplots
+        fig.update_xaxes(rangeslider_visible=False)
 
-def create_strategy_chart(df_with_signals: pd.DataFrame, strategy: str, metrics: Dict[str, Any]) -> go.Figure:
+def create_strategy_chart(
+    df_with_signals: pd.DataFrame,
+    strategy: str,
+    metrics: Dict[str, Any]
+) -> go.Figure:
     """
     Generates a full Plotly Figure for a given strategy.
 
