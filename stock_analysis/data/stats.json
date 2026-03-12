@@ -1,1 +1,422 @@
-[]
+[
+  {
+    "AAPL": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "25.21%",
+        "Average Return": "10.74%",
+        "Number of Trades": 5,
+        "Win Rate": "100.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "43.36%",
+        "Average Return": "4.91%",
+        "Number of Trades": 14,
+        "Win Rate": "85.71%"
+      },
+      "MACD": {
+        "Total Return": "54.52%",
+        "Average Return": "1.09%",
+        "Number of Trades": 48,
+        "Win Rate": "41.67%"
+      },
+      "SMA Crossover": {
+        "Total Return": "38.13%",
+        "Average Return": "2.58%",
+        "Number of Trades": 16,
+        "Win Rate": "50.00%"
+      }
+    }
+  },
+  {
+    "GOOGL": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "2.56%",
+        "Average Return": "1.81%",
+        "Number of Trades": 3,
+        "Win Rate": "66.67%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "84.58%",
+        "Average Return": "5.96%",
+        "Number of Trades": 13,
+        "Win Rate": "76.92%"
+      },
+      "MACD": {
+        "Total Return": "16.50%",
+        "Average Return": "0.41%",
+        "Number of Trades": 55,
+        "Win Rate": "47.27%"
+      },
+      "SMA Crossover": {
+        "Total Return": "98.23%",
+        "Average Return": "7.01%",
+        "Number of Trades": 14,
+        "Win Rate": "42.86%"
+      }
+    }
+  },
+  {
+    "PEP": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "21.86%",
+        "Average Return": "4.65%",
+        "Number of Trades": 5,
+        "Win Rate": "60.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "40.40%",
+        "Average Return": "2.28%",
+        "Number of Trades": 16,
+        "Win Rate": "68.75%"
+      },
+      "MACD": {
+        "Total Return": "23.06%",
+        "Average Return": "0.50%",
+        "Number of Trades": 47,
+        "Win Rate": "42.55%"
+      },
+      "SMA Crossover": {
+        "Total Return": "-18.90%",
+        "Average Return": "-1.23%",
+        "Number of Trades": 16,
+        "Win Rate": "31.25%"
+      }
+    }
+  },
+  {
+    "META": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "-29.82%",
+        "Average Return": "25.63%",
+        "Number of Trades": 4,
+        "Win Rate": "100.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "-12.94%",
+        "Average Return": "5.08%",
+        "Number of Trades": 11,
+        "Win Rate": "81.82%"
+      },
+      "MACD": {
+        "Total Return": "-29.80%",
+        "Average Return": "-0.09%",
+        "Number of Trades": 53,
+        "Win Rate": "41.51%"
+      },
+      "SMA Crossover": {
+        "Total Return": "250.90%",
+        "Average Return": "16.58%",
+        "Number of Trades": 12,
+        "Win Rate": "50.00%"
+      }
+    }
+  },
+  {
+    "HSY": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "7.03%",
+        "Average Return": "2.55%",
+        "Number of Trades": 4,
+        "Win Rate": "50.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "84.51%",
+        "Average Return": "5.23%",
+        "Number of Trades": 14,
+        "Win Rate": "92.86%"
+      },
+      "MACD": {
+        "Total Return": "6.12%",
+        "Average Return": "0.21%",
+        "Number of Trades": 50,
+        "Win Rate": "48.00%"
+      },
+      "SMA Crossover": {
+        "Total Return": "19.15%",
+        "Average Return": "1.71%",
+        "Number of Trades": 13,
+        "Win Rate": "46.15%"
+      }
+    }
+  },
+  {
+    "ZTS": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "SMA Crossover": {
+        "Total Return": "-21.53%",
+        "Average Return": "-1.52%",
+        "Number of Trades": 14,
+        "Win Rate": "28.57%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "-28.82%",
+        "Average Return": "-3.15%",
+        "Number of Trades": 9,
+        "Win Rate": "44.44%"
+      },
+      "RSI": {
+        "Total Return": "-17.99%",
+        "Average Return": "6.22%",
+        "Number of Trades": 5,
+        "Win Rate": "60.00%"
+      },
+      "MACD": {
+        "Total Return": "-33.72%",
+        "Average Return": "-0.62%",
+        "Number of Trades": 53,
+        "Win Rate": "33.96%"
+      }
+    }
+  },
+  {
+    "MRK": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "30.55%",
+        "Average Return": "6.32%",
+        "Number of Trades": 5,
+        "Win Rate": "80.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "64.46%",
+        "Average Return": "4.57%",
+        "Number of Trades": 15,
+        "Win Rate": "93.33%"
+      },
+      "MACD": {
+        "Total Return": "16.28%",
+        "Average Return": "0.43%",
+        "Number of Trades": 50,
+        "Win Rate": "40.00%"
+      },
+      "SMA Crossover": {
+        "Total Return": "30.87%",
+        "Average Return": "2.76%",
+        "Number of Trades": 13,
+        "Win Rate": "38.46%"
+      }
+    }
+  },
+  {
+    "MSFT": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "25.58%",
+        "Average Return": "5.43%",
+        "Number of Trades": 5,
+        "Win Rate": "60.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "11.36%",
+        "Average Return": "2.42%",
+        "Number of Trades": 11,
+        "Win Rate": "72.73%"
+      },
+      "MACD": {
+        "Total Return": "-21.79%",
+        "Average Return": "-0.35%",
+        "Number of Trades": 52,
+        "Win Rate": "32.69%"
+      },
+      "SMA Crossover": {
+        "Total Return": "6.88%",
+        "Average Return": "1.01%",
+        "Number of Trades": 14,
+        "Win Rate": "35.71%"
+      }
+    }
+  },
+  {
+    "PM": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "67.21%",
+        "Average Return": "9.06%",
+        "Number of Trades": 6,
+        "Win Rate": "100.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "19.92%",
+        "Average Return": "3.56%",
+        "Number of Trades": 11,
+        "Win Rate": "63.64%"
+      },
+      "MACD": {
+        "Total Return": "40.25%",
+        "Average Return": "0.84%",
+        "Number of Trades": 51,
+        "Win Rate": "37.25%"
+      },
+      "SMA Crossover": {
+        "Total Return": "32.02%",
+        "Average Return": "2.82%",
+        "Number of Trades": 12,
+        "Win Rate": "50.00%"
+      }
+    }
+  },
+  {
+    "TXN": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "54.49%",
+        "Average Return": "12.21%",
+        "Number of Trades": 4,
+        "Win Rate": "75.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "121.17%",
+        "Average Return": "5.75%",
+        "Number of Trades": 17,
+        "Win Rate": "76.47%"
+      },
+      "MACD": {
+        "Total Return": "49.10%",
+        "Average Return": "1.00%",
+        "Number of Trades": 48,
+        "Win Rate": "37.50%"
+      },
+      "SMA Crossover": {
+        "Total Return": "-36.90%",
+        "Average Return": "-2.24%",
+        "Number of Trades": 19,
+        "Win Rate": "26.32%"
+      }
+    }
+  },
+  {
+    "SHW": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "16.45%",
+        "Average Return": "3.57%",
+        "Number of Trades": 6,
+        "Win Rate": "66.67%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "-9.17%",
+        "Average Return": "1.53%",
+        "Number of Trades": 13,
+        "Win Rate": "61.54%"
+      },
+      "MACD": {
+        "Total Return": "-1.94%",
+        "Average Return": "0.22%",
+        "Number of Trades": 50,
+        "Win Rate": "34.00%"
+      },
+      "SMA Crossover": {
+        "Total Return": "-14.57%",
+        "Average Return": "-0.74%",
+        "Number of Trades": 14,
+        "Win Rate": "28.57%"
+      }
+    }
+  },
+  {
+    "BAC": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "90.96%",
+        "Average Return": "9.99%",
+        "Number of Trades": 7,
+        "Win Rate": "85.71%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "71.89%",
+        "Average Return": "4.12%",
+        "Number of Trades": 17,
+        "Win Rate": "70.59%"
+      },
+      "MACD": {
+        "Total Return": "70.38%",
+        "Average Return": "1.34%",
+        "Number of Trades": 47,
+        "Win Rate": "48.94%"
+      },
+      "SMA Crossover": {
+        "Total Return": "7.11%",
+        "Average Return": "1.63%",
+        "Number of Trades": 11,
+        "Win Rate": "36.36%"
+      }
+    }
+  },
+  {
+    "AOS": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "33.43%",
+        "Average Return": "4.63%",
+        "Number of Trades": 7,
+        "Win Rate": "57.14%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "57.77%",
+        "Average Return": "3.67%",
+        "Number of Trades": 16,
+        "Win Rate": "75.00%"
+      },
+      "MACD": {
+        "Total Return": "23.37%",
+        "Average Return": "0.67%",
+        "Number of Trades": 45,
+        "Win Rate": "37.78%"
+      },
+      "SMA Crossover": {
+        "Total Return": "-31.50%",
+        "Average Return": "-2.02%",
+        "Number of Trades": 16,
+        "Win Rate": "50.00%"
+      }
+    }
+  },
+  {
+    "VICI": {
+      "date-begin": "2021-03-12",
+      "date-end": "2026-03-11",
+      "RSI": {
+        "Total Return": "58.40%",
+        "Average Return": "10.01%",
+        "Number of Trades": 5,
+        "Win Rate": "80.00%"
+      },
+      "Bollinger Bands": {
+        "Total Return": "55.87%",
+        "Average Return": "3.44%",
+        "Number of Trades": 14,
+        "Win Rate": "64.29%"
+      },
+      "MACD": {
+        "Total Return": "12.37%",
+        "Average Return": "0.37%",
+        "Number of Trades": 45,
+        "Win Rate": "33.33%"
+      },
+      "SMA Crossover": {
+        "Total Return": "0.04%",
+        "Average Return": "0.26%",
+        "Number of Trades": 16,
+        "Win Rate": "37.50%"
+      }
+    }
+  }
+]
