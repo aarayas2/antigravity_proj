@@ -8,10 +8,10 @@ from pages.strategy_chart import run_analysis_for_ticker
 @pytest.fixture
 def sample_metrics():
     return {
-        "Total Return": "10.5%",
-        "Average Return": "1.2%",
-        "Number of Trades": "5",
-        "Win Rate": "60.0%"
+        "Total Return": 0.105,
+        "Average Return": 0.012,
+        "Number of Trades": 5,
+        "Win Rate": 0.6
     }
 
 @pytest.fixture
@@ -56,10 +56,10 @@ def test_run_analysis_batch_mode(mock_create_chart, mock_calc_metrics, mock_appl
     assert result is not None
     assert "MockStrategy" in result["metrics"]
     assert result["metrics"]["MockStrategy"] == {
-        "Total Return": "10.5%",
-        "Average Return": "1.2%",
-        "Number of Trades": "5",
-        "Win Rate": "60.0%"
+        "Total Return": 0.105,
+        "Average Return": 0.012,
+        "Number of Trades": 5,
+        "Win Rate": 0.6
     }
     assert result["sections"] == []
     assert "MockStrategy" in result["buy_signals"]

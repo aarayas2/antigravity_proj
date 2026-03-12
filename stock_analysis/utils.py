@@ -285,10 +285,10 @@ def _compile_performance_metrics(initial_capital, final_capital, trades_history)
     avg_return = (total_profit_pct / trades) if trades > 0 else 0
 
     return {
-        "Total Return": f"{total_return:.2f}%",
-        "Average Return": f"{avg_return:.2f}%",
+        "Total Return": round(total_return / 100, 4),
+        "Average Return": round(avg_return / 100, 4),
         "Number of Trades": trades,
-        "Win Rate": f"{win_rate:.2f}%",
+        "Win Rate": round(win_rate / 100, 4),
         "Trades History": trades_history,
     }
 
@@ -309,10 +309,10 @@ def calculate_metrics(df: pd.DataFrame, strategy: str) -> dict:  # pylint: disab
     """Calculates basic performance metrics from the generated signals."""
     if not _has_valid_signals(df):
         return {
-            "Total Return": "0.00%",
-            "Average Return": "0.00%",
+            "Total Return": 0.0,
+            "Average Return": 0.0,
             "Number of Trades": 0,
-            "Win Rate": "0.00%",
+            "Win Rate": 0.0,
             "Trades History": [],
         }
 

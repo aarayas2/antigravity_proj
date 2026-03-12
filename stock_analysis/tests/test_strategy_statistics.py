@@ -19,9 +19,9 @@ class TestStrategyStatistics(unittest.TestCase):
                 'date-begin': '2020-01-01',
                 'date-end': '2021-01-01',
                 'Strategy1': {
-                    'Win Rate': '60%',
-                    'Average Return': '5%',
-                    'Total Return': '10%',
+                    'Win Rate': 0.6,
+                    'Average Return': 0.05,
+                    'Total Return': 0.1,
                     'Number of Trades': 2
                 }
             }},
@@ -29,9 +29,9 @@ class TestStrategyStatistics(unittest.TestCase):
                 'date-begin': '2020-01-01',
                 'date-end': '2021-01-01',
                 'Strategy1': {
-                    'Win Rate': '70%',
-                    'Average Return': '6%',
-                    'Total Return': '12%',
+                    'Win Rate': 0.7,
+                    'Average Return': 0.06,
+                    'Total Return': 0.12,
                     'Number of Trades': 3
                 }
             }},
@@ -39,9 +39,9 @@ class TestStrategyStatistics(unittest.TestCase):
                 'date-begin': '2021-01-01',
                 'date-end': '2022-01-01',
                 'Strategy2': {
-                    'Win Rate': '80%',
-                    'Average Return': '7%',
-                    'Total Return': '15%',
+                    'Win Rate': 0.8,
+                    'Average Return': 0.07,
+                    'Total Return': 0.15,
                     'Number of Trades': 4
                 }
             }},
@@ -49,9 +49,9 @@ class TestStrategyStatistics(unittest.TestCase):
                 'date-begin': '2020-01-01',
                 'date-end': '2021-01-01',
                 'Strategy1': {
-                    'Win Rate': '90%',
-                    'Average Return': '8%',
-                    'Total Return': '20%',
+                    'Win Rate': 0.9,
+                    'Average Return': 0.08,
+                    'Total Return': 0.2,
                     'Number of Trades': 5
                 }
             }}

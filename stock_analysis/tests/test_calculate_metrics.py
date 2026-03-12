@@ -11,21 +11,21 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
     def test_calculate_metrics_no_position_column(self):
         df = pd.DataFrame({'Close': [100.0, 105.0]})
         result = calculate_metrics(df, 'dummy')
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
     def test_calculate_metrics_no_close_column(self):
         df = pd.DataFrame({'Position': [1.0, 1.0]})
         result = calculate_metrics(df, 'dummy')
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
     def test_calculate_metrics_empty_dataframe(self):
         df = pd.DataFrame()
         result = calculate_metrics(df, 'dummy')
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
@@ -36,7 +36,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
             'Position': [0.0, 0.0, 0.0]
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
@@ -52,9 +52,9 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         result = calculate_metrics(df, 'dummy')
 
         self.assertEqual(result['Number of Trades'], 1)
-        self.assertEqual(result['Total Return'], '50.00%')
-        self.assertEqual(result['Win Rate'], '100.00%')
-        self.assertEqual(result['Average Return'], '50.00%')
+        self.assertEqual(result['Total Return'], 0.5)
+        self.assertEqual(result['Win Rate'], 1.0)
+        self.assertEqual(result['Average Return'], 0.5)
         self.assertEqual(len(result['Trades History']), 1)
         self.assertEqual(result['Trades History'][0]['entry_price'], 100.0)
         self.assertEqual(result['Trades History'][0]['exit_price'], 150.0)
@@ -71,9 +71,9 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         result = calculate_metrics(df, 'dummy')
 
         self.assertEqual(result['Number of Trades'], 1)
-        self.assertEqual(result['Total Return'], '-50.00%')
-        self.assertEqual(result['Win Rate'], '0.00%')
-        self.assertEqual(result['Average Return'], '-50.00%')
+        self.assertEqual(result['Total Return'], -0.5)
+        self.assertEqual(result['Win Rate'], 0.0)
+        self.assertEqual(result['Average Return'], -0.5)
         self.assertEqual(result['Trades History'][0]['profit'], -50.0)
 
     def test_calculate_metrics_multiple_trades(self):
@@ -94,9 +94,9 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         # Profit trade 2: (180-150)/150 = 20%
         # Total Return: (18000-10000)/10000 = 80%
         # Avg Return: (50 + 20) / 2 = 35%
-        self.assertEqual(result['Total Return'], '80.00%')
-        self.assertEqual(result['Win Rate'], '100.00%')
-        self.assertEqual(result['Average Return'], '35.00%')
+        self.assertEqual(result['Total Return'], 0.8)
+        self.assertEqual(result['Win Rate'], 1.0)
+        self.assertEqual(result['Average Return'], 0.35)
 
     def test_calculate_metrics_open_trade_at_end(self):
         dates = pd.date_range('2023-01-01', periods=2)
@@ -109,9 +109,9 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         result = calculate_metrics(df, 'dummy')
 
         self.assertEqual(result['Number of Trades'], 1)
-        self.assertEqual(result['Total Return'], '100.00%')
-        self.assertEqual(result['Win Rate'], '100.00%')
-        self.assertEqual(result['Average Return'], '100.00%')
+        self.assertEqual(result['Total Return'], 1.0)
+        self.assertEqual(result['Win Rate'], 1.0)
+        self.assertEqual(result['Average Return'], 1.0)
 
     def test_calculate_metrics_sell_without_buy(self):
         dates = pd.date_range('2023-01-01', periods=2)
@@ -123,7 +123,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         result = calculate_metrics(df, 'dummy')
 
         self.assertEqual(result['Number of Trades'], 0)
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_zero_or_negative_price(self):
         dates = pd.date_range('2023-01-01', periods=3)
@@ -135,7 +135,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         result = calculate_metrics(df, 'dummy')
 
         self.assertEqual(result['Number of Trades'], 0)
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_fractional_capital(self):
         dates = pd.date_range('2023-01-01', periods=3)
@@ -150,7 +150,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
 
         self.assertEqual(result['Number of Trades'], 1)
         # Total Return: (13300 - 10000) / 10000 = 33%
-        self.assertEqual(result['Total Return'], '33.00%')
+        self.assertEqual(result['Total Return'], 0.33)
 
 
     def test_calculate_metrics_buy_without_sell_then_close(self):
@@ -173,7 +173,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         }, index=dates)
         result = calculate_metrics(df, 'dummy')
         self.assertEqual(result['Number of Trades'], 0)
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_multiple_trades_same_position(self):
         dates = pd.date_range('2023-01-01', periods=4)
@@ -186,7 +186,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Number of Trades'], 1)
         # Entry 100, Exit 120 => 20% return. The second 1.0 is ignored since capital < price
         # The second -1.0 is ignored since position_size = 0
-        self.assertEqual(result['Total Return'], '20.00%')
+        self.assertEqual(result['Total Return'], 0.2)
 
     def test_calculate_metrics_buy_hold_scenario(self):
         """
@@ -207,9 +207,9 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         result = calculate_metrics(df, "dummy")
 
         self.assertEqual(result['Number of Trades'], 1)
-        self.assertEqual(result['Total Return'], '50.00%')
-        self.assertEqual(result['Win Rate'], '100.00%')
-        self.assertEqual(result['Average Return'], '50.00%')
+        self.assertEqual(result['Total Return'], 0.5)
+        self.assertEqual(result['Win Rate'], 1.0)
+        self.assertEqual(result['Average Return'], 0.5)
 
     def test_calculate_metrics_all_zero_positions(self):
         """
@@ -224,7 +224,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
 
         result = calculate_metrics(df, "dummy")
 
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
@@ -241,7 +241,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
 
         result = calculate_metrics(df, "dummy")
 
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Trades History'], [])
 
@@ -260,14 +260,14 @@ class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
         result = calculate_metrics(df, "dummy")
 
         self.assertEqual(result['Number of Trades'], 1)
-        self.assertEqual(result['Total Return'], '50.00%')
+        self.assertEqual(result['Total Return'], 0.5)
 
     def test_compile_performance_metrics_empty_trades(self):
         """Passing an empty list [] to _compile_performance_metrics is a trivial 5-line test."""
         from utils import _compile_performance_metrics
         result = _compile_performance_metrics(10000.0, 10000.0, [])
         self.assertEqual(result['Number of Trades'], 0)
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_empty_active_df_but_valid(self):
         """Test when the DataFrame is valid but has no active positions, ensuring it doesn't crash."""
@@ -278,7 +278,7 @@ class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
         }, index=dates)
         result = calculate_metrics(df, "dummy")
         self.assertEqual(result['Number of Trades'], 0)
-        self.assertEqual(result['Total Return'], '0.00%')
+        self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_string_strategy_is_ignored(self):
         """Ensure the strategy string parameter doesn't alter the simple metric calculation."""
@@ -290,7 +290,7 @@ class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
         result1 = calculate_metrics(df, "StrategyA")
         result2 = calculate_metrics(df, "StrategyB")
         self.assertEqual(result1, result2)
-        self.assertEqual(result1['Total Return'], '100.00%')
+        self.assertEqual(result1['Total Return'], 1.0)
 
 if __name__ == '__main__':
     unittest.main()

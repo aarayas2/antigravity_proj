@@ -47,11 +47,11 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
             metrics_row = dbc.Row([
                 dbc.Col(dbc.Card(dbc.CardBody([
                     html.H5("Total Return", className="card-title"),
-                    html.H3(metrics["Total Return"], className="text-success" if float(metrics["Total Return"].strip('%')) >= 0 else "text-danger")
+                    html.H3(f"{metrics['Total Return']:.2%}", className="text-success" if metrics["Total Return"] >= 0 else "text-danger")
                 ])), md=3),
                 dbc.Col(dbc.Card(dbc.CardBody([
                     html.H5("Average Return", className="card-title"),
-                    html.H3(metrics["Average Return"], className="text-success" if float(metrics["Average Return"].strip('%')) >= 0 else "text-danger")
+                    html.H3(f"{metrics['Average Return']:.2%}", className="text-success" if metrics["Average Return"] >= 0 else "text-danger")
                 ])), md=3),
                 dbc.Col(dbc.Card(dbc.CardBody([
                     html.H5("Number of Trades", className="card-title"),
@@ -59,7 +59,7 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
                 ])), md=3),
                 dbc.Col(dbc.Card(dbc.CardBody([
                     html.H5("Win Rate", className="card-title"),
-                    html.H3(metrics["Win Rate"], className="text-warning")
+                    html.H3(f"{metrics['Win Rate']:.2%}", className="text-warning")
                 ])), md=3),
             ], className="mb-4")
 

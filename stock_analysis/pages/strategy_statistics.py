@@ -64,24 +64,16 @@ def update_stats_table(min_win_rate):
                 if strategy in ['date-begin', 'date-end']:
                     continue
 
-                win_rate_str = metrics.get('Win Rate', '0%')
-                try:
-                    win_rate_val = float(win_rate_str.strip('%')) / 100.0
-                except ValueError:
-                    win_rate_val = 0.0
+                win_rate_val = metrics.get('Win Rate', 0.0)
 
                 if (win_rate_val * 100) > min_win_rate:
                     
-                    avg_return_str = metrics.get('Average Return', '0%')
-                    try:
-                        avg_return_val = float(avg_return_str.strip('%')) / 100.0
-                    except ValueError:
-                        avg_return_val = 0.0
+                    avg_return_val = metrics.get('Average Return', 0.0)
                         
                     rows.append({
                         "Ticker": ticker,
                         "Strategy": strategy,
-                        "Total Return": metrics.get('Total Return', 'N/A'),
+                        "Total Return": metrics.get('Total Return', 0.0),
                         "Average Return": avg_return_val,
                         "Number of Trades": metrics.get('Number of Trades', 'N/A'),
                         "Win Rate": win_rate_val,
@@ -101,7 +93,10 @@ def update_stats_table(min_win_rate):
     columnDefs = [
         {"field": "Ticker"},
         {"field": "Strategy"},
-        {"field": "Total Return"},
+        {
+            "field": "Total Return",
+            "valueFormatter": {"function": "d3.format('.2%')(params.value)"}
+        },
         {
             "field": "Average Return",
             "valueFormatter": {"function": "d3.format('.2%')(params.value)"}
