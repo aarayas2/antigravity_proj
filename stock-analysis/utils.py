@@ -6,8 +6,8 @@ import datetime
 import os
 import re
 
-import pandas as pd
-import yfinance as yf
+import pandas as pd  # pylint: disable=import-error
+import yfinance as yf  # pylint: disable=import-error
 
 from persistence import StatsManager, JsonStatsStorage  # pylint: disable=import-error
 from strategy import STRATEGIES  # pylint: disable=import-error
