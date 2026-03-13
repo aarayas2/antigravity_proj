@@ -213,11 +213,14 @@ from urllib.parse import parse_qs
     Output("ticker-input", "value"),
     Output("url", "search"),
     Output("initial-load", "data"),
+    Output("compute-btn", "n_clicks"),
     Input("url", "search"),
     Input("ticker-input", "value"),
-    State("initial-load", "data")
+    State("initial-load", "data"),
+    State("compute-btn", "n_clicks")
 )
-def sync_ticker(search, ticker, is_initial_load):
+def sync_ticker(search, ticker, is_initial_load, n_clicks):
+    n_clicks = n_clicks or 0
     import dash
     ctx = dash.callback_context
     trigger = ctx.triggered[0]['prop_id'] if ctx.triggered else None
@@ -229,20 +232,20 @@ def sync_ticker(search, ticker, is_initial_load):
     if is_initial_load:
         if url_ticker:
             # URL takes precedence
-            return url_ticker.upper(), dash.no_update, False
+            return url_ticker.upper(), dash.no_update, False, n_clicks + 1
         else:
             # Update URL with default input value if not present
             if ticker and ticker != "AAPL":
-                return dash.no_update, f"?ticker={ticker}", False
-            return dash.no_update, dash.no_update, False
+                return dash.no_update, f"?ticker={ticker}", False, n_clicks + 1
+            return dash.no_update, dash.no_update, False, n_clicks + 1
 
     # Afterwards, normal sync
     if trigger == 'ticker-input.value':
         if ticker and ticker != url_ticker:
-            return dash.no_update, f"?ticker={ticker}", False
+            return dash.no_update, f"?ticker={ticker}", False, dash.no_update
     elif trigger == 'url.search':
         if url_ticker and url_ticker != ticker:
-            return url_ticker.upper(), dash.no_update, False
+            return url_ticker.upper(), dash.no_update, False, n_clicks + 1
 
-    return dash.no_update, dash.no_update, False
+    return dash.no_update, dash.no_update, False, dash.no_update
 
