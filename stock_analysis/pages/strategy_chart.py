@@ -95,6 +95,7 @@ def layout():
     
     return html.Div([
         dcc.Store(id='mru-store', storage_type='local', data=[]),
+        dcc.Store(id='initial-load', data=True),
         html.Datalist(id='mru-tickers'),
         
         dbc.Row([
@@ -202,3 +203,46 @@ def update_analysis(n_clicks, n_submit, ticker, date_range, mru_data):
         stats_manager.save_stats(ticker, date_begin_str, date_end_str, strategies_metrics)
 
     return html.Div(output_sections), mru_data
+
+
+
+
+from urllib.parse import parse_qs
+
+@callback(
+    Output("ticker-input", "value"),
+    Output("url", "search"),
+    Output("initial-load", "data"),
+    Input("url", "search"),
+    Input("ticker-input", "value"),
+    State("initial-load", "data")
+)
+def sync_ticker(search, ticker, is_initial_load):
+    import dash
+    ctx = dash.callback_context
+    trigger = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+
+    parsed = parse_qs((search or "").lstrip('?'))
+    url_ticker = parsed.get('ticker', [None])[0]
+
+    # If it is the first time this callback fires
+    if is_initial_load:
+        if url_ticker:
+            # URL takes precedence
+            return url_ticker.upper(), dash.no_update, False
+        else:
+            # Update URL with default input value if not present
+            if ticker and ticker != "AAPL":
+                return dash.no_update, f"?ticker={ticker}", False
+            return dash.no_update, dash.no_update, False
+
+    # Afterwards, normal sync
+    if trigger == 'ticker-input.value':
+        if ticker and ticker != url_ticker:
+            return dash.no_update, f"?ticker={ticker}", False
+    elif trigger == 'url.search':
+        if url_ticker and url_ticker != ticker:
+            return url_ticker.upper(), dash.no_update, False
+
+    return dash.no_update, dash.no_update, False
+
