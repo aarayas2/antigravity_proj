@@ -161,27 +161,30 @@ def main():
 
     print("Breakout environment started!")
 
+    steps_done = 0
+
     # Run a simple loop to demonstrate stepping through the environment
     try:
-        for step in range(100):
+        for step in range(1000):
             # Print the shape and device of the processed frame for verification
             if step == 0:
                 print(f"Original observation shape: {observation.shape}")
                 print(f"Processed observation shape: {state.shape}, dtype: {state.dtype}, device: {state.device}")
 
-            # Your Neural Network would go here to decide 'action'
-            # For Breakout, actions typically are: 0=NOOP, 1=FIRE, 2=RIGHT, 3=LEFT
+            # Epsilon-greedy action selection
+            steps_done += 1
+            epsilon = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
             
-            # Epsilon-greedy action selection or test evaluation
-            # For now, just choose best action according to policy net to test inference
-            with torch.no_grad():
-                # state is (1, 4, 84, 84)
-                q_values = policy_net(state)
-                # Select the action with the highest Q-value
-                action = q_values.max(1)[1].item()
-                
-                # In training, we would typically use epsilon-greedy:
-                # if random.random() < epsilon: action = env.action_space.sample()
+            if random.random() > epsilon:
+                with torch.no_grad():
+                    # Exploit: Let the neural network pick the best move
+                    # state is (1, 4, 84, 84)
+                    q_values = policy_net(state)
+                    # Select the action with the highest Q-value
+                    action = q_values.max(1)[1].item()
+            else:
+                # Explore: Pick a completely random move
+                action = env.action_space.sample()
             
             # Step the environment
             next_observation, reward, terminated, truncated, info = env.step(action)
@@ -200,6 +203,13 @@ def main():
             # Move to the next state
             state = next_state
             
+            # --- TRIGGER THE STUDY SESSION ---
+            optimize_model()
+            
+            # --- STAGE 1: Sync the Target Network with the Policy Network ---
+            if steps_done % TARGET_UPDATE == 0:
+                target_net.load_state_dict(policy_net.state_dict())
+            
             if done:
                 observation, info = env.reset()
                 initial_frame = preprocess_frame(observation, device)
@@ -208,9 +218,9 @@ def main():
                 
             time.sleep(0.01) # Slow down a bit to see the rendering
             
-            # Periodically print buffer size for testing
-            if step % 20 == 0:
-                print(f"Step {step}: Replay Buffer Size = {len(memory)}")
+            # Periodically print progress for testing
+            if steps_done % 100 == 0:
+                print(f"Step {steps_done}: Replay Buffer Size = {len(memory)}, Epsilon = {epsilon:.3f}")
             
     except KeyboardInterrupt:
         print("Interrupted by user.")
