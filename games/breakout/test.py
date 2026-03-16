@@ -10,7 +10,30 @@ import time
 import ale_py
 import random
 from collections import deque
+import os
+
 gym.register_envs(ale_py)
+
+def save_checkpoint(state, filename="breakout_model.pth"):
+    print(f"Saving checkpoint to {filename}...")
+    torch.save(state, filename)
+
+def load_checkpoint(filename, policy_net, target_net, optimizer, device):
+    if os.path.isfile(filename):
+        print(f"Loading checkpoint '{filename}'...")
+        # map_location ensures it loads correctly whether on CPU, CUDA, or MPS
+        checkpoint = torch.load(filename, map_location=device, weights_only=False) 
+        
+        policy_net.load_state_dict(checkpoint['policy_net_state_dict'])
+        target_net.load_state_dict(checkpoint['target_net_state_dict'])
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        steps_done = checkpoint['steps_done']
+        
+        print(f"Loaded successfully. Resuming from step {steps_done}.")
+        return steps_done
+    else:
+        print(f"No checkpoint found at '{filename}'. Starting fresh.")
+        return 0
 
 class DQN(nn.Module):
     def __init__(self, n_actions):
@@ -97,7 +120,6 @@ def main():
     else:
         device = torch.device('cpu')
     print(f"Using device: {device}")
-    import os
     os.environ["SDL_AUDIODRIVER"] = "dummy"  # Disable sound for the Pygame renderer
 
     # ALE/Breakout-v5 is the standard Atari environment in Gymnasium
@@ -161,7 +183,8 @@ def main():
 
     print("Breakout environment started!")
 
-    steps_done = 0
+    # Load checkpoint if it exists
+    steps_done = load_checkpoint("breakout_model.pth", policy_net, target_net, optimizer, device)
 
     # Run a simple loop to demonstrate stepping through the environment
     try:
@@ -223,8 +246,15 @@ def main():
                 print(f"Step {steps_done}: Replay Buffer Size = {len(memory)}, Epsilon = {epsilon:.3f}")
             
     except KeyboardInterrupt:
-        print("Interrupted by user.")
+            print("Interrupted by user.")
     finally:
+        # Save checkpoint before exiting
+        save_checkpoint({
+            'steps_done': steps_done,
+            'policy_net_state_dict': policy_net.state_dict(),
+            'target_net_state_dict': target_net.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+        })
         env.close()
 
 if __name__ == "__main__":
