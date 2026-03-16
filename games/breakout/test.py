@@ -1,5 +1,3 @@
-import torch
-import torch.nn as nn
 import gymnasium as gym
 import time
 import ale_py
@@ -7,6 +5,9 @@ import ale_py
 gym.register_envs(ale_py)
 
 def main():
+    import os
+    os.environ["SDL_AUDIODRIVER"] = "dummy"  # Disable sound for the Pygame renderer
+
     # ALE/Breakout-v5 is the standard Atari environment in Gymnasium
     env = gym.make('ALE/Breakout-v5', render_mode="human")
     observation, info = env.reset()
