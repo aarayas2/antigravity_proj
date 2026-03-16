@@ -111,6 +111,11 @@ EPS_DECAY = 10000
 TARGET_UPDATE = 1000    
 LEARNING_RATE = 1e-4    
 
+# --- EXECUTION CONFIGURATION ---
+RUN_MODE = "TRAIN"              # Options: "TRAIN" or "EVALUATE"
+MAX_TRAINING_STEPS = 2_000_000  # 2 Million steps is a good first goal
+RENDER_IN_TRAINING = False      # False = Train extremely fast on M1. True = Watch it (very slow).
+
 def main():
     # Set device to MPS (Apple Silicon), CUDA, or CPU
     if torch.backends.mps.is_available():
@@ -123,7 +128,8 @@ def main():
     os.environ["SDL_AUDIODRIVER"] = "dummy"  # Disable sound for the Pygame renderer
 
     # ALE/Breakout-v5 is the standard Atari environment in Gymnasium
-    env = gym.make('ALE/Breakout-v5', render_mode="human")
+    render_mode = "human" if (RENDER_IN_TRAINING or RUN_MODE == "EVALUATE") else None
+    env = gym.make('ALE/Breakout-v5', render_mode=render_mode)
     n_actions = env.action_space.n
     
     # Initialize DQN model (Policy Network)
@@ -187,11 +193,12 @@ def main():
 
     print("Breakout environment started!")
 
-    # Run a simple loop to demonstrate stepping through the environment
+    # Run a continuous loop until we hit the maximum limit
     try:
-        for step in range(1000):
+        # If we load at step 500,000, this while loop knows we only have 1,500,000 left to go
+        while steps_done < MAX_TRAINING_STEPS:
             # Print the shape and device of the processed frame for verification
-            if step == 0:
+            if steps_done == 1:
                 print(f"Original observation shape: {observation.shape}")
                 print(f"Processed observation shape: {state.shape}, dtype: {state.dtype}, device: {state.device}")
 
@@ -234,17 +241,28 @@ def main():
             if steps_done % TARGET_UPDATE == 0:
                 target_net.load_state_dict(policy_net.state_dict())
             
+            # --- SAVE PROGRESS PERIODICALLY ---
+            if steps_done % 5000 == 0: # Save every 5,000 steps
+                checkpoint = {
+                    'steps_done': steps_done,
+                    'policy_net_state_dict': policy_net.state_dict(),
+                    'target_net_state_dict': target_net.state_dict(),
+                    'optimizer_state_dict': optimizer.state_dict()
+                }
+                save_checkpoint(checkpoint, CHECKPOINT_FILE)
+            
             if done:
                 observation, info = env.reset()
                 initial_frame = preprocess_frame(observation, device)
                 for _ in range(4): frame_stack.append(initial_frame)
                 state = get_state(frame_stack)
                 
-            time.sleep(0.01) # Slow down a bit to see the rendering
+            if render_mode == "human":
+                time.sleep(0.01) # Slow down a bit to see the rendering
             
             # Periodically print progress for testing
-            if steps_done % 100 == 0:
-                print(f"Step {steps_done}: Replay Buffer Size = {len(memory)}, Epsilon = {epsilon:.3f}")
+            if steps_done % 1000 == 0:
+                print(f"Step {steps_done}/{MAX_TRAINING_STEPS}: Replay Buffer Size = {len(memory)}, Epsilon = {epsilon:.3f}")
             
     except KeyboardInterrupt:
             print("Interrupted by user.")
