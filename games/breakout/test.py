@@ -107,7 +107,7 @@ BATCH_SIZE = 32
 GAMMA = 0.99            
 EPS_START = 1.0         
 EPS_END = 0.1           
-EPS_DECAY = 10000       
+EPS_DECAY = 250000       
 TARGET_UPDATE = 1000    
 LEARNING_RATE = 1e-4    
 
@@ -195,16 +195,19 @@ def main():
 
     # Run a continuous loop until we hit the maximum limit
     try:
-        # If we load at step 500,000, this while loop knows we only have 1,500,000 left to go
-        while steps_done < MAX_TRAINING_STEPS:
+        # Check if we are evaluating (run forever) or training (stop at MAX)
+        while steps_done < MAX_TRAINING_STEPS or RUN_MODE == "EVALUATE":
             # Print the shape and device of the processed frame for verification
             if steps_done == 1:
                 print(f"Original observation shape: {observation.shape}")
                 print(f"Processed observation shape: {state.shape}, dtype: {state.dtype}, device: {state.device}")
 
-            # Epsilon-greedy action selection
-            steps_done += 1
-            epsilon = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
+            # --- ACTION SELECTION ---
+            if RUN_MODE == "TRAIN":
+                steps_done += 1
+                epsilon = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
+            else:
+                epsilon = 0.00 # NO random moves during evaluation!
             
             if random.random() > epsilon:
                 with torch.no_grad():
@@ -228,28 +231,30 @@ def main():
             frame_stack.append(next_frame)
             next_state = get_state(frame_stack)
             
-            # Store the transition in the replay buffer
-            memory.push(state, action, reward, next_state, done)
-            
             # Move to the next state
             state = next_state
             
-            # --- TRIGGER THE STUDY SESSION ---
-            optimize_model()
-            
-            # --- STAGE 1: Sync the Target Network with the Policy Network ---
-            if steps_done % TARGET_UPDATE == 0:
-                target_net.load_state_dict(policy_net.state_dict())
-            
-            # --- SAVE PROGRESS PERIODICALLY ---
-            if steps_done % 5000 == 0: # Save every 5,000 steps
-                checkpoint = {
-                    'steps_done': steps_done,
-                    'policy_net_state_dict': policy_net.state_dict(),
-                    'target_net_state_dict': target_net.state_dict(),
-                    'optimizer_state_dict': optimizer.state_dict()
-                }
-                save_checkpoint(checkpoint, CHECKPOINT_FILE)
+            # --- TRAINING LOGIC (Only if in TRAIN mode) ---
+            if RUN_MODE == "TRAIN":
+                # Store the transition in the replay buffer
+                memory.push(state, action, reward, next_state, done)
+                
+                # --- TRIGGER THE STUDY SESSION ---
+                optimize_model()
+                
+                # --- STAGE 1: Sync the Target Network with the Policy Network ---
+                if steps_done % TARGET_UPDATE == 0:
+                    target_net.load_state_dict(policy_net.state_dict())
+                
+                # --- SAVE PROGRESS PERIODICALLY ---
+                if steps_done % 5000 == 0: # Save every 5,000 steps
+                    checkpoint = {
+                        'steps_done': steps_done,
+                        'policy_net_state_dict': policy_net.state_dict(),
+                        'target_net_state_dict': target_net.state_dict(),
+                        'optimizer_state_dict': optimizer.state_dict()
+                    }
+                    save_checkpoint(checkpoint, CHECKPOINT_FILE)
             
             if done:
                 observation, info = env.reset()
