@@ -115,6 +115,38 @@ def main():
     # Initialize The Optimizer (The Coach)
     optimizer = optim.Adam(policy_net.parameters(), lr=LEARNING_RATE)
     
+    def optimize_model():
+        # Don't learn until we have enough memories saved up
+        if len(memory) < BATCH_SIZE:
+            return  
+        
+        # Grab a random batch of memories
+        transitions = memory.sample(BATCH_SIZE)
+        batch_state, batch_action, batch_reward, batch_next_state, batch_done = zip(*transitions)
+
+        # Convert them to PyTorch tensors on your M1 GPU
+        state_b = torch.cat(batch_state)
+        next_state_b = torch.cat(batch_next_state)
+        reward_b = torch.tensor(batch_reward, device=device)
+        action_b = torch.tensor(batch_action, device=device).unsqueeze(1)
+        done_b = torch.tensor(batch_done, device=device, dtype=torch.float)
+
+        # What did our Policy Net predict?
+        current_q = policy_net(state_b).gather(1, action_b)
+
+        # What was the actual result according to the Mentor (Target Net)?
+        with torch.no_grad():
+            max_next_q = target_net(next_state_b).max(1)[0]
+            expected_q = reward_b + (GAMMA * max_next_q * (1 - done_b))
+
+        # --- STAGE 2: The Loss Function (The Gradebook) ---
+        loss = F.huber_loss(current_q.squeeze(), expected_q)
+        
+        # --- STAGE 3: The Optimizer step (The Coach making adjustments) ---
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
     observation, info = env.reset()
 
     # Preprocess the initial observation
