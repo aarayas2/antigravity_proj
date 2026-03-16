@@ -107,7 +107,7 @@ BATCH_SIZE = 32
 GAMMA = 0.99            
 EPS_START = 1.0         
 EPS_END = 0.1           
-EPS_DECAY = 250000       
+EPS_DECAY = 25000       
 TARGET_UPDATE = 1000    
 LEARNING_RATE = 1e-4    
 
@@ -155,7 +155,7 @@ def main():
         # Convert them to PyTorch tensors on your M1 GPU
         state_b = torch.cat(batch_state)
         next_state_b = torch.cat(batch_next_state)
-        reward_b = torch.tensor(batch_reward, device=device)
+        reward_b = torch.sign(torch.tensor(batch_reward, device=device))
         action_b = torch.tensor(batch_action, device=device).unsqueeze(1)
         done_b = torch.tensor(batch_done, device=device, dtype=torch.float)
 
@@ -231,13 +231,13 @@ def main():
             frame_stack.append(next_frame)
             next_state = get_state(frame_stack)
             
-            # Move to the next state
-            state = next_state
-            
             # --- TRAINING LOGIC (Only if in TRAIN mode) ---
             if RUN_MODE == "TRAIN":
                 # Store the transition in the replay buffer
                 memory.push(state, action, reward, next_state, done)
+                
+                # Move to the next state
+                state = next_state
                 
                 # --- TRIGGER THE STUDY SESSION ---
                 optimize_model()
@@ -255,6 +255,9 @@ def main():
                         'optimizer_state_dict': optimizer.state_dict()
                     }
                     save_checkpoint(checkpoint, CHECKPOINT_FILE)
+            else:
+                # Move to the next state even if not training
+                state = next_state
             
             if done:
                 observation, info = env.reset()
