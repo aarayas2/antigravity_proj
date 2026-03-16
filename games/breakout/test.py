@@ -107,7 +107,7 @@ BATCH_SIZE = 32
 GAMMA = 0.99            
 EPS_START = 1.0         
 EPS_END = 0.1           
-EPS_DECAY = 25000       
+EPS_DECAY = 250000       
 TARGET_UPDATE = 1000    
 LEARNING_RATE = 1e-4    
 
