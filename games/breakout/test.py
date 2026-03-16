@@ -102,6 +102,59 @@ def get_state(obs_deque):
     # Concatenate them along the channel dimension (dim=1)
     return torch.cat(list(obs_deque), dim=1)
 
+def warm_up_buffer(env, memory, device, target_size=5000):
+    """
+    Plays the game using purely random actions to pre-fill the Replay Buffer.
+    This ensures the Replay Buffer has a diverse set of experiences to sample from
+    immediately upon starting or resuming, preventing the 'empty buffer' training hiccup.
+    """
+    print(f"Starting warm-up phase... Filling buffer to {target_size} memories.")
+    
+    # 1. Initialize a fresh environment just for the warm-up
+    observation, info = env.reset()
+    initial_frame = preprocess_frame(observation, device)
+    
+    # Create a temporary frame stack just for this function
+    frame_stack = deque([initial_frame] * 4, maxlen=4)
+    state = get_state(frame_stack)
+    
+    steps = 0
+    
+    # 2. Run a loop until the memory hits our target size
+    while len(memory) < target_size:
+        # Always pick a completely random action to maximize memory diversity
+        action = env.action_space.sample()
+        
+        # Take the step
+        next_observation, reward, terminated, truncated, info = env.step(action)
+        done = terminated or truncated
+        
+        # Preprocess and stack the new frame
+        next_frame = preprocess_frame(next_observation, device)
+        frame_stack.append(next_frame)
+        next_state = get_state(frame_stack)
+        
+        # Push to the real memory buffer
+        memory.push(state, action, reward, next_state, done)
+        
+        # Move forward
+        state = next_state
+        steps += 1
+        
+        # If the random actions cause a game over, reset the board
+        if done:
+            observation, info = env.reset()
+            initial_frame = preprocess_frame(observation, device)
+            for _ in range(4): 
+                frame_stack.append(initial_frame)
+            state = get_state(frame_stack)
+            
+        # Print progress so you know it hasn't frozen
+        if steps % 1000 == 0:
+            print(f"Warm-up progress: {len(memory)}/{target_size} memories collected.")
+            
+    print("Warm-up complete! Neural Network is ready to train.")
+
 # Hyperparameters
 BATCH_SIZE = 32         
 GAMMA = 0.99            
@@ -113,8 +166,10 @@ LEARNING_RATE = 1e-4
 
 # --- EXECUTION CONFIGURATION ---
 RUN_MODE = "TRAIN"              # Options: "TRAIN" or "EVALUATE"
+#RUN_MODE = "EVALUATE"
 MAX_TRAINING_STEPS = 2_000_000  # 2 Million steps is a good first goal
 RENDER_IN_TRAINING = False      # False = Train extremely fast on M1. True = Watch it (very slow).
+LEARNING_BUFFER_SIZE = 50_000   # 50,000 memories is a good starting point for training.
 
 def main():
     # Set device to MPS (Apple Silicon), CUDA, or CPU
@@ -189,9 +244,22 @@ def main():
     state = get_state(frame_stack)
 
     # Initialize Replay Buffer
-    memory = ReplayBuffer(capacity=10000)
+    memory = ReplayBuffer(capacity=LEARNING_BUFFER_SIZE)
 
     print("Breakout environment started!")
+
+    # Only run the warm-up if we are actually training
+    if RUN_MODE == "TRAIN":
+        # 5000 is a great sweet spot. It gives the AI enough data to start, 
+        # but only takes a few seconds to process on your M1.
+        warm_up_buffer(env, memory, device, target_size=5000)
+        
+        # Reset the environment one last time so the real training loop 
+        # starts at the very beginning of a fresh game.
+        observation, info = env.reset()
+        initial_frame = preprocess_frame(observation, device)
+        frame_stack = deque([initial_frame] * 4, maxlen=4)
+        state = get_state(frame_stack)
 
     # Run a continuous loop until we hit the maximum limit
     try:
