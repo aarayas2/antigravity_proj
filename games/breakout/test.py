@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
 import torchvision.transforms as T
+import math
 import numpy as np
 import gymnasium as gym
 import time
@@ -77,6 +79,15 @@ def get_state(obs_deque):
     # Concatenate them along the channel dimension (dim=1)
     return torch.cat(list(obs_deque), dim=1)
 
+# Hyperparameters
+BATCH_SIZE = 32         
+GAMMA = 0.99            
+EPS_START = 1.0         
+EPS_END = 0.1           
+EPS_DECAY = 10000       
+TARGET_UPDATE = 1000    
+LEARNING_RATE = 1e-4    
+
 def main():
     # Set device to MPS (Apple Silicon), CUDA, or CPU
     if torch.backends.mps.is_available():
@@ -93,8 +104,16 @@ def main():
     env = gym.make('ALE/Breakout-v5', render_mode="human")
     n_actions = env.action_space.n
     
-    # Initialize DQN model
+    # Initialize DQN model (Policy Network)
     policy_net = DQN(n_actions).to(device)
+
+    # Initialize The Target Network (The Mentor)
+    target_net = DQN(n_actions).to(device)
+    target_net.load_state_dict(policy_net.state_dict())
+    target_net.eval() # Set to evaluation mode (not training)
+
+    # Initialize The Optimizer (The Coach)
+    optimizer = optim.Adam(policy_net.parameters(), lr=LEARNING_RATE)
     
     observation, info = env.reset()
 
