@@ -1,4 +1,6 @@
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 import torchvision.transforms as T
 import numpy as np
 import gymnasium as gym
@@ -7,6 +9,29 @@ import ale_py
 import random
 from collections import deque
 gym.register_envs(ale_py)
+
+class DQN(nn.Module):
+    def __init__(self, n_actions):
+        super(DQN, self).__init__()
+        # Input: (Batch, 4, 84, 84) - 4 stacked grayscale frames
+        self.conv1 = nn.Conv2d(4, 32, kernel_size=8, stride=4)
+        self.conv2 = nn.Conv2d(32, 64, kernel_size=4, stride=2)
+        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
+        
+        # After conv layers, the 84x84 image becomes 7x7 with 64 channels
+        self.fc1 = nn.Linear(64 * 7 * 7, 512)
+        self.head = nn.Linear(512, n_actions)
+
+    def forward(self, x):
+        # Move data through convolutions with ReLU activation
+        x = F.relu(self.conv1(x))
+        x = F.relu(self.conv2(x))
+        x = F.relu(self.conv3(x))
+        
+        # Flatten and move through fully connected layers
+        x = x.view(x.size(0), -1) 
+        x = F.relu(self.fc1(x))
+        return self.head(x) # Returns Q-values for each action
 
 class ReplayBuffer:
     def __init__(self, capacity):
@@ -44,6 +69,14 @@ def preprocess_frame(frame, device):
     
     return transforms(frame).unsqueeze(0) # Add batch dimension: (1, 1, 84, 84)
 
+def get_state(obs_deque):
+    """
+    Combines 4 frames from a deque into a single tensor of shape (1, 4, 84, 84)
+    """
+    # obs_deque contains 4 tensors of shape (1, 1, 84, 84)
+    # Concatenate them along the channel dimension (dim=1)
+    return torch.cat(list(obs_deque), dim=1)
+
 def main():
     # Set device to MPS (Apple Silicon), CUDA, or CPU
     if torch.backends.mps.is_available():
@@ -58,10 +91,19 @@ def main():
 
     # ALE/Breakout-v5 is the standard Atari environment in Gymnasium
     env = gym.make('ALE/Breakout-v5', render_mode="human")
+    n_actions = env.action_space.n
+    
+    # Initialize DQN model
+    policy_net = DQN(n_actions).to(device)
+    
     observation, info = env.reset()
 
     # Preprocess the initial observation
-    state = preprocess_frame(observation, device)
+    initial_frame = preprocess_frame(observation, device)
+    
+    # Initialize a deque to hold the 4 most recent frames for stacking
+    frame_stack = deque([initial_frame] * 4, maxlen=4)
+    state = get_state(frame_stack)
 
     # Initialize Replay Buffer
     memory = ReplayBuffer(capacity=10000)
@@ -78,14 +120,28 @@ def main():
 
             # Your Neural Network would go here to decide 'action'
             # For Breakout, actions typically are: 0=NOOP, 1=FIRE, 2=RIGHT, 3=LEFT
-            action = env.action_space.sample()  # Choosing a random action for testing
+            
+            # Epsilon-greedy action selection or test evaluation
+            # For now, just choose best action according to policy net to test inference
+            with torch.no_grad():
+                # state is (1, 4, 84, 84)
+                q_values = policy_net(state)
+                # Select the action with the highest Q-value
+                action = q_values.max(1)[1].item()
+                
+                # In training, we would typically use epsilon-greedy:
+                # if random.random() < epsilon: action = env.action_space.sample()
             
             # Step the environment
             next_observation, reward, terminated, truncated, info = env.step(action)
             done = terminated or truncated
             
             # Preprocess the next observation
-            next_state = preprocess_frame(next_observation, device)
+            next_frame = preprocess_frame(next_observation, device)
+            
+            # Update frame stack
+            frame_stack.append(next_frame)
+            next_state = get_state(frame_stack)
             
             # Store the transition in the replay buffer
             memory.push(state, action, reward, next_state, done)
@@ -95,7 +151,9 @@ def main():
             
             if done:
                 observation, info = env.reset()
-                state = preprocess_frame(observation, device)
+                initial_frame = preprocess_frame(observation, device)
+                for _ in range(4): frame_stack.append(initial_frame)
+                state = get_state(frame_stack)
                 
             time.sleep(0.01) # Slow down a bit to see the rendering
             
