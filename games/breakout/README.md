@@ -1,9 +1,9 @@
 **Building an AI to Play Breakout: A Step-by-Step Guide**
 
 **1. Intro**
-Welcome! In this tutorial, we are going to walk through the complete evolution of an Artificial Intelligence that learns how to play the classic Atari game **Breakout**.
+Walk through the complete evolution of an Artificial Intelligence that learns how to play the classic Atari game **Breakout**.
 
-We won't just dump a finished, complex script on you. Instead, we'll build it step by step, tracing the exact sequence of code commits that transformed a simple random-action bot into a Deep Q-Network (DQN) capable of learning strategies directly from raw pixels. 
+Step by step, tracing the exact sequence of code commits that transformed a simple random-action bot into a Deep Q-Network (DQN) capable of learning strategies directly from raw pixels. 
 
 By the end of this guide, you will understand how the agent sees the game, how it makes decisions, and how it updates its "brain" to improve over time.
 
