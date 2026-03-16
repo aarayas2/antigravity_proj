@@ -79,7 +79,7 @@ for step in range(1000):
 +    return transform(img).unsqueeze(0).to(device)
 ```
 
-#**Step 3: Remembering the Past (Replay Buffer)**
+**Step 3: Remembering the Past (Replay Buffer)**
 **(Commit `20d7339`)**
 
 **What changed:** We introduced a `ReplayBuffer` class using `collections.deque`.
@@ -99,7 +99,7 @@ for step in range(1000):
 +        return random.sample(self.memory, batch_size)
 ```
 
-#**Step 4: Building the Brain & Understanding Motion**
+**Step 4: Building the Brain & Understanding Motion**
 **(Commit `559457f`)**
 
 **What changed:** This is a massive step. We introduced the `DQN` class (our Neural Network) and a `get_state` function that stacks 4 consecutive frames together.
@@ -117,7 +117,7 @@ for step in range(1000):
 +        self.conv3 = nn.Conv2d(64, 64, kernel_size=3, stride=1)
 ```
 
-#**Step 5: Learning from Mistakes (Optimizer & Loss)**
+**Step 5: Learning from Mistakes (Optimizer & Loss)**
 **(Commits `a9d58f0` & `5c9b77f`)**
 
 **What changed:** We added the `AdamW` optimizer and `nn.SmoothL1Loss` (Huber Loss) inside an `optimize_model` function.
@@ -135,7 +135,7 @@ for step in range(1000):
 +    optimizer.step()
 ```
 
-#**Step 6: Putting it Together (The Training Loop)**
+**Step 6: Putting it Together (The Training Loop)**
 **(Commits `25ce584`, `11ccced`, `c7f5b1b`)**
 
 **What changed:** We integrated the replay buffer, the epsilon-greedy action selection, and the network optimization into the main game loop. We also added functions to periodically save (`save_checkpoint`) and load the AI's "brain" so we don't lose progress if we close the script.
@@ -154,7 +154,7 @@ for step in range(1000):
 +            optimize_model()
 ```
 
-#**Step 7: Continuous Training & Epsilon-Greedy Exploration**
+**Step 7: Continuous Training & Epsilon-Greedy Exploration**
 **(Commits `1ca8c1e`, `f032d3e`)**
 
 **What changed:** We introduced a `RUN_MODE` toggle (`"TRAIN"` vs `"EVALUATE"`) and implemented **epsilon-greedy** action selection correctly inside the training logic. We also extended the loop from a fixed 1,000 steps to millions of steps (`MAX_TRAINING_STEPS = 2_000_000`).
@@ -176,7 +176,7 @@ for step in range(1000):
                  action = env.action_space.sample()
 ```
 
-#**Step 8: Refining the Rewards**
+**Step 8: Refining the Rewards**
 **(Commit `44e66bf`)**
 
 **What changed:** We added reward clipping (`torch.sign()`) and fixed a sequence bug in how states were pushed to memory.
@@ -189,7 +189,7 @@ for step in range(1000):
 +        reward_b = torch.sign(torch.tensor(batch_reward, device=device))
 ```
 
-#**Step 9: Extending Memory and Warming Up**
+**Step 9: Extending Memory and Warming Up**
 **(Commits `86399c8` & `dec6acd`)**
 
 **What changed:** We slowed down the randomness decay (`EPS_DECAY = 250000`) and wrote a `warm_up_buffer` function.
