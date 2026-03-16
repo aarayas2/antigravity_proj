@@ -169,6 +169,10 @@ def main():
         loss.backward()
         optimizer.step()
 
+    # Check for existing save file before starting
+    CHECKPOINT_FILE = "breakout_model.pth"
+    steps_done = load_checkpoint(CHECKPOINT_FILE, policy_net, target_net, optimizer, device)
+    
     observation, info = env.reset()
 
     # Preprocess the initial observation
@@ -182,9 +186,6 @@ def main():
     memory = ReplayBuffer(capacity=10000)
 
     print("Breakout environment started!")
-
-    # Load checkpoint if it exists
-    steps_done = load_checkpoint("breakout_model.pth", policy_net, target_net, optimizer, device)
 
     # Run a simple loop to demonstrate stepping through the environment
     try:
