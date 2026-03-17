@@ -165,11 +165,11 @@ TARGET_UPDATE = 1000
 LEARNING_RATE = 1e-4    
 
 # --- EXECUTION CONFIGURATION ---
-RUN_MODE = "TRAIN"              # Options: "TRAIN" or "EVALUATE"
-#RUN_MODE = "EVALUATE"
-MAX_TRAINING_STEPS = 2_000_000  # 2 Million steps is a good first goal
+#RUN_MODE = "TRAIN"              # Options: "TRAIN" or "EVALUATE"
+RUN_MODE = "EVALUATE"
+MAX_TRAINING_STEPS = 3_000_000 # Increased to 3 Million to continue training from step 2,000,000
 RENDER_IN_TRAINING = False      # False = Train extremely fast on M1. True = Watch it (very slow).
-LEARNING_BUFFER_SIZE = 50_000   # 50,000 memories is a good starting point for training.
+LEARNING_BUFFER_SIZE = 25_000   # 25,000 memories is a good starting point for training.
 
 def main():
     # Set device to MPS (Apple Silicon), CUDA, or CPU
@@ -261,6 +261,12 @@ def main():
         frame_stack = deque([initial_frame] * 4, maxlen=4)
         state = get_state(frame_stack)
 
+    # Start tracking episode reward
+    episode_reward = 0
+
+    current_lives = info.get('lives', 5) 
+    force_fire = True
+
     # Run a continuous loop until we hit the maximum limit
     try:
         # Check if we are evaluating (run forever) or training (stop at MAX)
@@ -276,8 +282,11 @@ def main():
                 epsilon = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
             else:
                 epsilon = 0.00 # NO random moves during evaluation!
-            
-            if random.random() > epsilon:
+
+            if force_fire:
+                action = 1 # 1 is 'FIRE' in Breakout
+                force_fire = False            
+            elif random.random() > epsilon:
                 with torch.no_grad():
                     # Exploit: Let the neural network pick the best move
                     # state is (1, 4, 84, 84)
@@ -291,6 +300,14 @@ def main():
             # Step the environment
             next_observation, reward, terminated, truncated, info = env.step(action)
             done = terminated or truncated
+
+            lives = info.get('lives', current_lives)
+            if lives < current_lives:
+                force_fire = True # We died! Force FIRE on the next frame to spawn the ball
+                current_lives = lives
+
+            # Add the current frame's points to the total
+            episode_reward += reward
             
             # Preprocess the next observation
             next_frame = preprocess_frame(next_observation, device)
@@ -328,7 +345,19 @@ def main():
                 state = next_state
             
             if done:
+                # When the game ends, log the final score to a text file
+                if RUN_MODE == "EVALUATE":
+                    with open("reward_history.csv", "a") as f:
+                        f.write(f"{steps_done},{episode_reward}\n")
+                
+                # Reset the score for the next game
+                episode_reward = 0
+
                 observation, info = env.reset()
+
+                current_lives = info.get('lives', 5)
+                force_fire = True
+
                 initial_frame = preprocess_frame(observation, device)
                 for _ in range(4): frame_stack.append(initial_frame)
                 state = get_state(frame_stack)
