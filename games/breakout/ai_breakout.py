@@ -171,6 +171,7 @@ def main():
 
     eval_steps = 0
     lives = info.get('lives', 0)
+    eval_fire_frames = 0
 
     try:
         while steps_done < MAX_TRAINING_STEPS or RUN_MODE == "EVALUATE":
@@ -184,7 +185,11 @@ def main():
 
             current_lives = info.get('lives', 0)
             if RUN_MODE == "EVALUATE" and current_lives < lives and current_lives > 0:
-                action = 1 # Force FIRE to start next ball
+                eval_fire_frames = 50 # Force FIRE for next 50 steps to guarantee spawn after death animation
+            
+            if RUN_MODE == "EVALUATE" and eval_fire_frames > 0:
+                action = 1 # Force FIRE
+                eval_fire_frames -= 1
             else:
                 if random.random() > epsilon:
                     with torch.no_grad():
