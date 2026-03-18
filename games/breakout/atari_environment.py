@@ -19,7 +19,7 @@ class FireResetEnv(gym.Wrapper):
             obs, info = self.env.reset(**kwargs)
         return obs, info
 
-def make_atari_env(env_id, render_mode=None):
+def make_atari_env(env_id, render_mode=None, evaluate=False):
     """Builds the environment with the standard DeepMind pipeline."""
     env = gym.make(env_id, render_mode=render_mode, frameskip=1)
     
@@ -32,7 +32,7 @@ def make_atari_env(env_id, render_mode=None):
         noop_max=30,                   # Anti-memorization trick
         frame_skip=4,                  # Speeds up training 4x
         screen_size=84,                # Shrinks frame to 84x84
-        terminal_on_life_loss=True,    # Dying now counts as Game Over
+        terminal_on_life_loss=not evaluate, # Dying now counts as Game Over only in training
         grayscale_obs=True,            # Removes color
         scale_obs=True                 # Converts pixel values from 0-255 to 0.0-1.0 automatically
     )

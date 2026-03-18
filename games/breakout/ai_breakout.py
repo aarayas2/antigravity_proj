@@ -101,10 +101,11 @@ EPS_DECAY = 250000
 TARGET_UPDATE = 1000    
 LEARNING_RATE = 1e-4    
 
-RUN_MODE = "TRAIN"             
+#RUN_MODE = "TRAIN"
+RUN_MODE = "EVALUATE"             
 MAX_TRAINING_STEPS = 5_000_000 
 RENDER_IN_TRAINING = False      
-LEARNING_BUFFER_SIZE = 50_000   
+LEARNING_BUFFER_SIZE = 30_000   
 
 def main():
     if torch.backends.mps.is_available():
@@ -120,7 +121,7 @@ def main():
     render_mode = "human" if (RENDER_IN_TRAINING or RUN_MODE == "EVALUATE") else None
     
     # Use the new environment wrapper function
-    env = make_atari_env('ALE/Breakout-v5', render_mode=render_mode)
+    env = make_atari_env('ALE/Breakout-v5', render_mode=render_mode, evaluate=(RUN_MODE == "EVALUATE"))
     n_actions = env.action_space.n
     
     policy_net = DQN(n_actions).to(device)
@@ -168,6 +169,9 @@ def main():
     observation, info = env.reset()
     state = torch.tensor(np.array(observation), dtype=torch.float32, device=device).unsqueeze(0)
 
+    eval_steps = 0
+    lives = info.get('lives', 0)
+
     try:
         while steps_done < MAX_TRAINING_STEPS or RUN_MODE == "EVALUATE":
             
@@ -175,14 +179,20 @@ def main():
                 steps_done += 1
                 epsilon = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
             else:
+                eval_steps += 1
                 epsilon = 0.00 
 
-            if random.random() > epsilon:
-                with torch.no_grad():
-                    q_values = policy_net(state)
-                    action = q_values.max(1)[1].item()
+            current_lives = info.get('lives', 0)
+            if RUN_MODE == "EVALUATE" and current_lives < lives and current_lives > 0:
+                action = 1 # Force FIRE to start next ball
             else:
-                action = env.action_space.sample()
+                if random.random() > epsilon:
+                    with torch.no_grad():
+                        q_values = policy_net(state)
+                        action = q_values.max(1)[1].item()
+                else:
+                    action = env.action_space.sample()
+            lives = current_lives
             
             next_observation, reward, terminated, truncated, info = env.step(action)
             done = terminated or truncated
@@ -217,12 +227,15 @@ def main():
                 episode_reward = 0
                 observation, info = env.reset()
                 state = torch.tensor(np.array(observation), dtype=torch.float32, device=device).unsqueeze(0)
+                lives = info.get('lives', 0)
                 
             if render_mode == "human":
                 time.sleep(0.01)
             
-            if steps_done % 1000 == 0:
+            if RUN_MODE == "TRAIN" and steps_done % 1000 == 0:
                 print(f"Step {steps_done}/{MAX_TRAINING_STEPS}: Buffer = {len(memory)}, Epsilon = {epsilon:.3f}")
+            elif RUN_MODE == "EVALUATE" and eval_steps % 1000 == 0:
+                print(f"Eval Step {eval_steps}: Buffer = {len(memory)}, Epsilon = {epsilon:.3f}")
             
     except KeyboardInterrupt:
             print("Interrupted by user.")
