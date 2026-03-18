@@ -65,7 +65,7 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
 
             # Generate the Plotly figure
             fig = create_strategy_chart(df_with_signals, strategy, metrics)
-            chart_section = dcc.Graph(figure=fig)
+            chart_section = dcc.Graph(figure=fig, style={'width': '100%', 'height': '700px'})
 
             section = html.Div([
                 html.H3(f"Strategy Performance: {strategy} ({ticker})", className="mb-3"),

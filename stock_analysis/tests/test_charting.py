@@ -241,14 +241,24 @@ def test_add_traces(mock_add_signals, mock_add_strategy, mock_add_candlestick, m
 def test_update_layout():
     mock_fig = MagicMock()
     
+    rangeselector = {
+        "buttons": [
+            {"count": 1, "label": "1m", "step": "month", "stepmode": "backward"},
+            {"count": 6, "label": "6m", "step": "month", "stepmode": "backward"},
+            {"count": 1, "label": "1y", "step": "year", "stepmode": "backward"},
+            {"step": "all"}
+        ]
+    }
+
     # Test with main_row
     _update_layout(mock_fig, main_row=1)
     mock_fig.update_layout.assert_called_once_with(
         height=700, template="plotly_dark",
-        xaxis_rangeslider_visible=False,
         margin={"l": 0, "r": 0, "t": 30, "b": 0}
     )
-    mock_fig.update_xaxes.assert_called_once_with(rangeslider_visible=False)
+    assert mock_fig.update_xaxes.call_count == 2
+    mock_fig.update_xaxes.assert_any_call(rangeslider_visible=False, rangeselector=rangeselector, row=1, col=1)
+    mock_fig.update_xaxes.assert_any_call(rangeslider_visible=False, row=2, col=1)
     
     mock_fig.reset_mock()
     
@@ -256,10 +266,9 @@ def test_update_layout():
     _update_layout(mock_fig, main_row=None)
     mock_fig.update_layout.assert_called_once_with(
         height=700, template="plotly_dark",
-        xaxis_rangeslider_visible=False,
         margin={"l": 0, "r": 0, "t": 30, "b": 0}
     )
-    mock_fig.update_xaxes.assert_not_called()
+    mock_fig.update_xaxes.assert_called_once_with(rangeslider_visible=False, rangeselector=rangeselector)
 
 @patch('charting._setup_figure')
 @patch('charting._add_traces')

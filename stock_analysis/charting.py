@@ -166,12 +166,23 @@ def _update_layout(fig: go.Figure, main_row: Optional[int]) -> None:
     """Updates figure layout and axes visibility."""
     fig.update_layout(
         height=700, template="plotly_dark",
-        xaxis_rangeslider_visible=False,
         margin={"l": 0, "r": 0, "t": 30, "b": 0}
     )
+
+    rangeselector = {
+        "buttons": [
+            {"count": 1, "label": "1m", "step": "month", "stepmode": "backward"},
+            {"count": 6, "label": "6m", "step": "month", "stepmode": "backward"},
+            {"count": 1, "label": "1y", "step": "year", "stepmode": "backward"},
+            {"step": "all"}
+        ]
+    }
+
     if main_row:
-        # Ensure rangeslider off for all subplots
-        fig.update_xaxes(rangeslider_visible=False)
+        fig.update_xaxes(rangeslider_visible=False, rangeselector=rangeselector, row=1, col=1)
+        fig.update_xaxes(rangeslider_visible=False, row=2, col=1)
+    else:
+        fig.update_xaxes(rangeslider_visible=False, rangeselector=rangeselector)
 
 def create_strategy_chart(
     df_with_signals: pd.DataFrame,
