@@ -256,7 +256,13 @@ def test_update_layout():
         height=700, template="plotly_dark",
         margin={"l": 0, "r": 0, "t": 30, "b": 0}
     )
-    assert mock_fig.update_xaxes.call_count == 2
+    assert mock_fig.update_xaxes.call_count == 3
+    mock_fig.update_xaxes.assert_any_call(
+        rangeselector={
+            "bgcolor": "#1f2937",
+            "activecolor": "#374151"
+        }
+    )
     mock_fig.update_xaxes.assert_any_call(rangeslider_visible=False, rangeselector=rangeselector, row=1, col=1)
     mock_fig.update_xaxes.assert_any_call(rangeslider_visible=False, row=2, col=1)
     
@@ -268,7 +274,14 @@ def test_update_layout():
         height=700, template="plotly_dark",
         margin={"l": 0, "r": 0, "t": 30, "b": 0}
     )
-    mock_fig.update_xaxes.assert_called_once_with(rangeslider_visible=False, rangeselector=rangeselector)
+    assert mock_fig.update_xaxes.call_count == 2
+    mock_fig.update_xaxes.assert_any_call(
+        rangeselector={
+            "bgcolor": "#1f2937",
+            "activecolor": "#374151"
+        }
+    )
+    mock_fig.update_xaxes.assert_any_call(rangeslider_visible=False, rangeselector=rangeselector)
 
 @patch('charting._setup_figure')
 @patch('charting._add_traces')
