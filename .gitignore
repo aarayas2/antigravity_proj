@@ -4,6 +4,7 @@ __pycache__/
 stock_analysis/data/
 games/breakout/*.pth
 games/breakout/model/*.pth
+games/breakout/reward_history.csv
 
 # Environments
 .env
