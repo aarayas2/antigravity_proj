@@ -106,8 +106,8 @@ class StatsManager:
             # Create a mapping for O(1) lookups and updates
             # Using the first key as the ticker identifier
             data_dict = {
-                k: (i, e[k]) 
-                for i, e in enumerate(data) 
+                k: (i, e[k])
+                for i, e in enumerate(data)
                 for k in [next(iter(e))]
             }
 

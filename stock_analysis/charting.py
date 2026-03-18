@@ -176,7 +176,7 @@ def _update_layout(fig: go.Figure, main_row: Optional[int]) -> None:
             "activecolor": "#374151"
         }
     )
-    
+
     rangeselector = {
         "buttons": [
             {"count": 1, "label": "1m", "step": "month", "stepmode": "backward"},
