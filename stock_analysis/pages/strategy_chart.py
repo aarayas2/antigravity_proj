@@ -25,7 +25,7 @@ def run_analysis_for_ticker(ticker: str, start_date_obj: datetime.date, end_date
     buy_signals = []
     
     def process_strategy(strategy):
-        df_with_signals = apply_strategy(df, strategy)
+        df_with_signals = apply_strategy(df.copy(), strategy)
         metrics = calculate_metrics(df_with_signals, strategy)
 
         strategy_metric = {

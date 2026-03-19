@@ -2,11 +2,8 @@ import pandas as pd
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
-    rsi = df.ta.rsi(length=14)
-    if rsi is not None:
-        df = pd.concat([df, rsi.rename("RSI_14")], axis=1)
-    else:
-        return df.copy()
+    df = df.copy()
+    df.ta.rsi(length=14, append=True, col_names=("RSI_14",))
     
     df['Signal'] = 0.0
     df.loc[df['RSI_14'] < 30, 'Signal'] = 1.0

@@ -2,8 +2,9 @@ import pandas as pd
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
     if df.empty:
-        return df.copy()
+        return df
 
     bbands = df.ta.bbands(length=20, std=2)
     if bbands is not None and not bbands.empty and 'BBL_20_2.0_2.0' in bbands.columns and 'BBU_20_2.0_2.0' in bbands.columns:
@@ -16,8 +17,7 @@ def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
         df['Signal'] = np.where(mask_buy, 1.0, df['Signal'])
         df['Signal'] = np.where(mask_sell, -1.0, df['Signal'])
         df['Position'] = df['Signal']
-        return df
-    return df.copy()
+    return df
 
 def needs_subplots() -> bool:
     return False

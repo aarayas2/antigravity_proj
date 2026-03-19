@@ -3,14 +3,9 @@ import pandas_ta  # pylint: disable=unused-import # Required to register .ta acc
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
-    sma20 = df.ta.sma(length=20)
-    sma50 = df.ta.sma(length=50)
-
-    if sma20 is not None and sma50 is not None:
-        # Create the new DataFrame by concatenating SMA columns
-        df = pd.concat([df, sma20.rename("SMA_20"), sma50.rename("SMA_50")], axis=1)
-    else:
-        return df.copy()
+    df = df.copy()
+    df.ta.sma(length=20, append=True, col_names=("SMA_20",))
+    df.ta.sma(length=50, append=True, col_names=("SMA_50",))
     
     df['Signal'] = 0.0
     if 'SMA_20' in df.columns and 'SMA_50' in df.columns:

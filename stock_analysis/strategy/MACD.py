@@ -3,6 +3,7 @@ import pandas_ta
 import plotly.graph_objects as go
 
 def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.copy()
     macd = df.ta.macd(fast=12, slow=26, signal=9)
     if macd is not None and not macd.empty and 'MACD_12_26_9' in macd.columns:
          df = pd.concat([df, macd], axis=1)
@@ -10,8 +11,7 @@ def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
          df['Signal'] = 0.0
          df.loc[df['MACD_12_26_9'] > df['MACDs_12_26_9'], 'Signal'] = 1.0
          df['Position'] = df['Signal'].diff()
-         return df
-    return df.copy()
+    return df
 
 def needs_subplots() -> bool:
     return True
