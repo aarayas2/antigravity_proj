@@ -22,17 +22,13 @@
 }
 
 /* Zebra striping for ag-theme-quartz-dark */
-.ag-theme-quartz-dark .row-even {
-    background-color: #222222 !important;
-}
-.ag-theme-quartz-dark .row-odd {
-    background-color: #333333 !important;
+.ag-theme-quartz-dark .ag-row-odd {
+    background-color: #1a2332 !important;
 }
 
 /* Fix zebra striping for ag-theme-quartz-dark */
-.ag-theme-quartz-dark {
-    --ag-odd-row-background-color: #333333;
-    --ag-row-background-color: #222222;
+.ag-theme-quartz-dark .ag-row-even {
+    background-color: #111827 !important;
 }
 
 /* AgGrid styling to enforce zebra striping */
