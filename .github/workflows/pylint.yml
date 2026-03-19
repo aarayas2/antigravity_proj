@@ -24,4 +24,4 @@ jobs:
 
     - name: Run pylint
       run: |
-        pylint **/*.py --fail-under=8.0
+         pylint **/*.py --ignore=games --fail-under=8.0

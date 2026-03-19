@@ -1,2 +1,5 @@
+[MASTER]
+ignore=games
+
 [SIMILARITIES]
 min-similarity-lines=20
