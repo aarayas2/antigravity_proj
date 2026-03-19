@@ -170,14 +170,9 @@ def _update_layout(fig: go.Figure, main_row: Optional[int]) -> None:
     )
 
     # Fix unreadable default rangeselector buttons in dark mode
-    fig.update_xaxes(
-        rangeselector={
-            "bgcolor": "#1f2937",
-            "activecolor": "#374151"
-        }
-    )
-
     rangeselector = {
+        "bgcolor": "#1f2937",
+        "activecolor": "#374151",
         "buttons": [
             {"count": 1, "label": "1m", "step": "month", "stepmode": "backward"},
             {"count": 6, "label": "6m", "step": "month", "stepmode": "backward"},
