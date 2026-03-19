@@ -1,0 +1,93 @@
+
+import unittest
+from unittest.mock import patch, mock_open, MagicMock
+import json
+import os
+import io
+from convert_data import migrate
+
+class TestConvertData(unittest.TestCase):
+
+    @patch('os.path.exists')
+    @patch('builtins.print')
+    def test_migrate_file_not_found(self, mock_print, mock_exists):
+        mock_exists.return_value = False
+        migrate('non_existent.json')
+        mock_print.assert_called_with("Stats file not found at non_existent.json")
+
+    @patch('os.path.exists')
+    @patch('builtins.open', new_callable=mock_open, read_data='[]')
+    @patch('json.dump')
+    def test_migrate_empty_data(self, mock_json_dump, mock_file, mock_exists):
+        mock_exists.return_value = True
+        migrate('stats.json')
+        mock_json_dump.assert_called_once_with([], mock_file(), indent=2)
+
+    @patch('os.path.exists')
+    @patch('builtins.open', new_callable=mock_open)
+    @patch('json.load')
+    @patch('json.dump')
+    def test_migrate_successful_conversion(self, mock_json_dump, mock_json_load, mock_file, mock_exists):
+        mock_exists.return_value = True
+        
+        # Input data with various scenarios
+        input_data = [
+            {
+                "AAPL": {
+                    "date-begin": "2023-01-01",
+                    "date-end": "2023-12-31",
+                    "SMA": {
+                        "Total Return": "15.5%",
+                        "Average Return": "1.2%",
+                        "Win Rate": "60.0%",
+                        "Other Metric": "Value"
+                    },
+                    "RSI": {
+                        "Total Return": 0.1234,  # Already float
+                        "Average Return": "invalid", # Invalid string
+                        "Win Rate": "50%"
+                    }
+                }
+            }
+        ]
+        mock_json_load.return_value = input_data
+
+        migrate('stats.json')
+
+        # Capture the data passed to json.dump
+        args, kwargs = mock_json_dump.call_args
+        dumped_data = args[0]
+
+        # Verify conversions
+        aapl = dumped_data[0]["AAPL"]
+        self.assertEqual(aapl["SMA"]["Total Return"], 0.155)
+        self.assertEqual(aapl["SMA"]["Average Return"], 0.012)
+        self.assertEqual(aapl["SMA"]["Win Rate"], 0.6)
+        self.assertEqual(aapl["SMA"]["Other Metric"], "Value")
+        
+        self.assertEqual(aapl["RSI"]["Total Return"], 0.1234)
+        self.assertEqual(aapl["RSI"]["Average Return"], 0.0)
+        self.assertEqual(aapl["RSI"]["Win Rate"], 0.5)
+        
+        # Verify date keys were ignored
+        self.assertEqual(aapl["date-begin"], "2023-01-01")
+
+    @patch('os.path.exists')
+    @patch('builtins.open', new_callable=mock_open, read_data='[{"TICK": {"Strat": {"Total Return": "100%"}}}]')
+    def test_migrate_writes_to_file(self, mock_file, mock_exists):
+        mock_exists.return_value = True
+        
+        # We need to mock json.load because mock_open's read_data doesn't automatically feed json.load in some versions/setups if not careful
+        # Actually, migrate calls json.load(f). mock_open() returns a file handle.
+        # Let's just use the real json.load and mock_open
+        
+        with patch('json.load') as mock_load:
+            mock_load.return_value = [{"TICK": {"Strat": {"Total Return": "100%"}}}]
+            with patch('json.dump') as mock_dump:
+                migrate('stats.json')
+                mock_dump.assert_called_once()
+                # Check that it was opened for writing at the end
+                mock_file.assert_any_call('stats.json', 'w', encoding='utf-8')
+
+if __name__ == '__main__':
+    unittest.main()
