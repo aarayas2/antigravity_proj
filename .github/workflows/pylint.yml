@@ -18,10 +18,10 @@ jobs:
       with:
         python-version: '3.12.3'
 
-    - name: Install pylint
+    - name: Install dependencies
       run: |
-        pip install pylint
+        pip install pylint pandas plotly dash pandas_ta
 
     - name: Run pylint
       run: |
-         pylint **/*.py --ignore=games --fail-under=8.0
+         cd stock_analysis && PYTHONPATH=. pylint **/*.py --ignore=games,tests --fail-under=8.0
