@@ -4,6 +4,7 @@ Supports both interactive Dash web UI and batch CLI analysis modes.
 """
 import argparse
 from collections import defaultdict
+import concurrent.futures
 import os
 import sys
 
@@ -34,7 +35,7 @@ app.title = "Strategy Analysis"
 
 def run_batch_mode(tickers_str: str):
     """
-    Executes the batch analysis for a list of tickers sequentially.
+    Executes the batch analysis for a list of tickers concurrently.
     """
     # Deduplicate tickers while preserving order (to avoid redundant processing)
     tickers = list(dict.fromkeys(t.strip().upper() for t in tickers_str.split(";") if t.strip()))
@@ -60,30 +61,42 @@ def run_batch_mode(tickers_str: str):
     date_begin_str = start_date_obj.strftime('%Y-%m-%d')
     date_end_str = end_date_obj.strftime('%Y-%m-%d')
 
-    for ticker in tickers:
+    def process_ticker(ticker):
         print(f"[{ticker}] Starting analysis...")
         result = run_analysis_for_ticker(ticker, start_date_obj, end_date_obj, is_batch_mode=True)
         if result is None:
             print(f"[{ticker}] Failed to load data.")
-            continue
-
-        # Collect stats for batch save
-        batch_stats.append({
-            'ticker': ticker,
-            'date_begin': date_begin_str,
-            'date_end': date_end_str,
-            'strategies_metrics': result["metrics"]
-        })
-
+            return ticker, None
         print(f"[{ticker}] Analysis complete.")
-        success_count += 1
+        return ticker, result
 
-        if result.get("buy_signals"):
-            # ⚡ Performance Optimization:
-            # Instead of accumulating dicts into an intermediate `buy_zone_signals` list and
-            # iterating over it a second time, we directly populate `strategy_groups` here.
-            for strategy in result["buy_signals"]:
-                strategy_groups[strategy].append(ticker)
+    # ⚡ Performance Optimization:
+    # Use a ThreadPoolExecutor to run analysis concurrently rather than sequentially.
+    # This massively speeds up the batch process, especially over I/O bounds like data fetching.
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tickers), 10)) as executor:
+        future_to_ticker = {executor.submit(process_ticker, ticker): ticker for ticker in tickers}
+        for future in concurrent.futures.as_completed(future_to_ticker):
+            ticker = future_to_ticker[future]
+            try:
+                _, result = future.result()
+                if result is None:
+                    continue
+
+                # Collect stats for batch save
+                batch_stats.append({
+                    'ticker': ticker,
+                    'date_begin': date_begin_str,
+                    'date_end': date_end_str,
+                    'strategies_metrics': result["metrics"]
+                })
+
+                success_count += 1
+
+                if result.get("buy_signals"):
+                    for strategy in result["buy_signals"]:
+                        strategy_groups[strategy].append(ticker)
+            except Exception as exc:  # pylint: disable=broad-except
+                print(f"[{ticker}] generated an exception: {exc}")
     # Save all stats in one batch operation
     if batch_stats:
         print(f"Saving statistics for {len(batch_stats)} ticker(s)...")
