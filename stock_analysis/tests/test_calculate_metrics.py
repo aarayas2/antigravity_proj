@@ -1,3 +1,4 @@
+"""Unit tests for the calculate_metrics function in the utils module."""
 import sys
 import os
 import unittest
@@ -5,10 +6,12 @@ import pandas as pd
 import numpy as np
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import calculate_metrics
+from utils import calculate_metrics  # pylint: disable=wrong-import-position,import-error
 
 class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
+    """Test suite for the calculate_metrics backtesting loop."""
     def test_calculate_metrics_no_position_column(self):
+        """Test that missing position column returns zeroed metrics."""
         df = pd.DataFrame({'Close': [100.0, 105.0]})
         result = calculate_metrics(df, 'dummy')
         self.assertEqual(result['Total Return'], 0.0)
@@ -16,6 +19,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Trades History'], [])
 
     def test_calculate_metrics_no_close_column(self):
+        """Test that missing close column returns zeroed metrics."""
         df = pd.DataFrame({'Position': [1.0, 1.0]})
         result = calculate_metrics(df, 'dummy')
         self.assertEqual(result['Total Return'], 0.0)
@@ -23,6 +27,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Trades History'], [])
 
     def test_calculate_metrics_empty_dataframe(self):
+        """Test that empty dataframe returns zeroed metrics."""
         df = pd.DataFrame()
         result = calculate_metrics(df, 'dummy')
         self.assertEqual(result['Total Return'], 0.0)
@@ -30,6 +35,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Trades History'], [])
 
     def test_calculate_metrics_no_trades_taken(self):
+        """Test metrics when no trades are taken."""
         dates = pd.date_range('2023-01-01', periods=3)
         df = pd.DataFrame({
             'Close': [100.0, 105.0, 110.0],
@@ -41,6 +47,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Trades History'], [])
 
     def test_calculate_metrics_single_winning_trade(self):
+        """Test metrics for a single winning trade."""
         dates = pd.date_range('2023-01-01', periods=3)
         # Day 1: Buy @ 100 -> 100 shares bought (capital drops from 10000 to 0)
         # Day 2: Hold @ 110
@@ -60,6 +67,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Trades History'][0]['exit_price'], 150.0)
 
     def test_calculate_metrics_single_losing_trade(self):
+        """Test metrics for a single losing trade."""
         dates = pd.date_range('2023-01-01', periods=3)
         # Day 1: Buy @ 100 -> 100 shares
         # Day 2: Hold @ 90
@@ -77,6 +85,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Trades History'][0]['profit'], -50.0)
 
     def test_calculate_metrics_multiple_trades(self):
+        """Test metrics across multiple trades."""
         dates = pd.date_range('2023-01-01', periods=5)
         # Day 1: Buy @ 100 -> 100 shares (Capital: 0)
         # Day 2: Sell @ 150 -> 100 shares (Capital: 15000)
@@ -99,6 +108,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Average Return'], 0.35)
 
     def test_calculate_metrics_open_trade_at_end(self):
+        """Test metrics when there is an open trade at the end."""
         dates = pd.date_range('2023-01-01', periods=2)
         # Day 1: Buy @ 100 -> 100 shares (Capital: 0)
         # Day 2: Hold @ 200 -> Position: 0 (Ends as open position)
@@ -114,6 +124,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Average Return'], 1.0)
 
     def test_calculate_metrics_sell_without_buy(self):
+        """Test metrics when trying to sell without a prior buy."""
         dates = pd.date_range('2023-01-01', periods=2)
         # Selling before buying should be ignored
         df = pd.DataFrame({
@@ -126,6 +137,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_zero_or_negative_price(self):
+        """Test behavior when the price is zero or negative."""
         dates = pd.date_range('2023-01-01', periods=3)
         # Buying at price 0 or negative should be ignored due to price > 0 check
         df = pd.DataFrame({
@@ -138,6 +150,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_fractional_capital(self):
+        """Test trade metrics involving fractional capital."""
         dates = pd.date_range('2023-01-01', periods=3)
         # Capital 10000
         # Buy @ 300 -> 33 shares (9900 cost), 100 capital remaining
@@ -154,6 +167,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
 
 
     def test_calculate_metrics_buy_without_sell_then_close(self):
+        """Test scenario with buy but no sell signal, just a close out."""
         dates = pd.date_range('2023-01-01', periods=3)
         # Buy @ 100, then hold, but no explicit sell. Closed out at exit_price.
         df = pd.DataFrame({
@@ -165,6 +179,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         # Entry 100, Exit 120 => 20% return.
 
     def test_calculate_metrics_fractional_shares_large_price(self):
+        """Test behavior when the stock price is too high for the available capital."""
         dates = pd.date_range('2023-01-01', periods=3)
         # Price is higher than capital, so shares_to_buy = 0
         df = pd.DataFrame({
@@ -176,6 +191,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_multiple_trades_same_position(self):
+        """Test backtesting with repeated identical position signals."""
         dates = pd.date_range('2023-01-01', periods=4)
         # Sequence of duplicate position signals
         df = pd.DataFrame({
@@ -246,6 +262,7 @@ class TestCalculateMetricsBacktestingLoop(unittest.TestCase):
         self.assertEqual(result['Trades History'], [])
 
 class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
+    """Extended test suite for the calculate_metrics backtesting loop."""
     def test_calculate_metrics_with_nan_values(self):
         """Test how backtesting handles NaN in Close or Position."""
         dates = pd.date_range('2024-01-01', periods=3)
@@ -264,13 +281,14 @@ class TestCalculateMetricsBacktestingLoopExtended(unittest.TestCase):
 
     def test_compile_performance_metrics_empty_trades(self):
         """Passing an empty list [] to _compile_performance_metrics is a trivial 5-line test."""
+        # pylint: disable=import-outside-toplevel,import-error
         from utils import _compile_performance_metrics
         result = _compile_performance_metrics(10000.0, 10000.0, [])
         self.assertEqual(result['Number of Trades'], 0)
         self.assertEqual(result['Total Return'], 0.0)
 
     def test_calculate_metrics_empty_active_df_but_valid(self):
-        """Test when the DataFrame is valid but has no active positions, ensuring it doesn't crash."""
+        """Test valid DataFrame with no active positions, ensuring it doesn't crash."""
         dates = pd.date_range('2024-01-01', periods=2)
         df = pd.DataFrame({
             'Close': [100.0, 100.0],
