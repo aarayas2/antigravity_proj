@@ -2,11 +2,13 @@
 Strategy Chart Page
 Provides the layout and callbacks for analyzing and charting various trading strategies.
 """
+import datetime
+import concurrent.futures
+from urllib.parse import parse_qs
+
 import dash
 from dash import dcc, html, Input, Output, State, callback
 import dash_bootstrap_components as dbc
-import datetime
-import concurrent.futures
 
 from utils import load_data, apply_strategy, calculate_metrics, stats_manager
 from utils import get_date_ranges
@@ -210,7 +212,7 @@ def update_datalist(mru_data):
     State("date-range-slider", "value"),
     State("mru-store", "data")
 )
-def update_analysis(n_clicks, n_submit, ticker, date_range, mru_data):
+def update_analysis(n_clicks, n_submit, ticker, date_range, mru_data): # pylint: disable=unused-argument
     """
     Handles computation of analysis and returns updated UI components and MRU list.
     """
@@ -259,8 +261,6 @@ def update_analysis(n_clicks, n_submit, ticker, date_range, mru_data):
 
 
 
-from urllib.parse import parse_qs
-
 @callback(
     Output("ticker-input", "value"),
     Output("url", "search"),
@@ -276,7 +276,6 @@ def sync_ticker(search, ticker, is_initial_load, n_clicks):
     Synchronizes the ticker input value with the URL search parameters.
     """
     n_clicks = n_clicks or 0
-    import dash
     ctx = dash.callback_context
     trigger = ctx.triggered[0]['prop_id'] if ctx.triggered else None
 
