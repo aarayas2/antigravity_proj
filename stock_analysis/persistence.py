@@ -92,6 +92,13 @@ class StatsManager:
             "strategies_metrics": strategies_metrics
         }])
 
+    def read_all_stats(self) -> List[Dict[str, Any]]:
+        """
+        Reads and returns all currently stored statistics.
+        """
+        with self._lock:
+            return self._storage.read()
+
     def save_stats_batch(self, batch_data: List[Dict[str, Any]]):
         """
         Saves or updates statistics for a batch of tickers to avoid repeated I/O operations.
