@@ -171,7 +171,6 @@ def main():
 
     eval_steps = 0
     lives = info.get('lives', 0)
-    eval_fire_frames = 0
 
     try:
         while steps_done < MAX_TRAINING_STEPS or RUN_MODE == "EVALUATE":
@@ -181,22 +180,22 @@ def main():
                 epsilon = EPS_END + (EPS_START - EPS_END) * math.exp(-1. * steps_done / EPS_DECAY)
             else:
                 eval_steps += 1
-                epsilon = 0.00 
+                epsilon = 0.01 # DeepMind standard evaluation epsilon to prevent logical hangs
 
             current_lives = info.get('lives', 0)
-            if RUN_MODE == "EVALUATE" and current_lives < lives and current_lives > 0:
-                eval_fire_frames = 50 # Force FIRE for next 50 steps to guarantee spawn after death animation
             
-            if RUN_MODE == "EVALUATE" and eval_fire_frames > 0:
-                action = 1 # Force FIRE
-                eval_fire_frames -= 1
+            if random.random() > epsilon:
+                with torch.no_grad():
+                    q_values = policy_net(state)
+                    action = q_values.max(1)[1].item()
             else:
-                if random.random() > epsilon:
-                    with torch.no_grad():
-                        q_values = policy_net(state)
-                        action = q_values.max(1)[1].item()
-                else:
-                    action = env.action_space.sample()
+                action = env.action_space.sample()
+
+            # Map NOOP (0) to FIRE (1) to instantly spawn the ball 
+            # without freezing the paddle and without waiting for random epsilons.
+            if RUN_MODE == "EVALUATE" and action == 0:
+                action = 1
+                
             lives = current_lives
             
             next_observation, reward, terminated, truncated, info = env.step(action)
