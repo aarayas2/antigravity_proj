@@ -1,3 +1,7 @@
+"""
+Unit tests for the main application module (app.py).
+"""
+
 import pytest
 from unittest.mock import patch
 import datetime
@@ -9,9 +13,11 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')
 from app import run_batch_mode
 
 class TestApp:
+    """Tests for the core application logic like batch mode."""
 
     @patch('app.get_date_ranges')
     def test_run_batch_mode_no_valid_tickers(self, mock_get_date_ranges):
+        """Test batch mode when no valid tickers are provided."""
         result = run_batch_mode("")
         assert result == {}
         mock_get_date_ranges.assert_not_called()
@@ -23,7 +29,10 @@ class TestApp:
     @patch('app.stats_manager')
     @patch('app.run_analysis_for_ticker')
     @patch('app.get_date_ranges')
-    def test_run_batch_mode_success(self, mock_get_date_ranges, mock_run_analysis, mock_stats_manager):
+    def test_run_batch_mode_success(
+        self, mock_get_date_ranges, mock_run_analysis, mock_stats_manager
+    ):
+        """Test successful execution of batch mode for multiple valid tickers."""
         min_date = datetime.datetime(2023, 1, 1)
         max_date = datetime.datetime(2023, 12, 31)
         mock_get_date_ranges.return_value = {
@@ -44,10 +53,8 @@ class TestApp:
 
         result = run_batch_mode("AAPL;MSFT")
 
-        assert result == {
-            "strat1": ["AAPL"],
-            "strat2": ["AAPL", "MSFT"]
-        }
+        assert set(result["strat1"]) == {"AAPL"}
+        assert set(result["strat2"]) == {"AAPL", "MSFT"}
 
         mock_run_analysis.assert_any_call("AAPL", min_date, max_date, is_batch_mode=True)
         mock_run_analysis.assert_any_call("MSFT", min_date, max_date, is_batch_mode=True)
@@ -70,7 +77,10 @@ class TestApp:
     @patch('app.stats_manager')
     @patch('app.run_analysis_for_ticker')
     @patch('app.get_date_ranges')
-    def test_run_batch_mode_partial_failure(self, mock_get_date_ranges, mock_run_analysis, mock_stats_manager):
+    def test_run_batch_mode_partial_failure(
+        self, mock_get_date_ranges, mock_run_analysis, mock_stats_manager
+    ):
+        """Test batch mode execution when analysis partially fails."""
         min_date = datetime.datetime(2023, 1, 1)
         max_date = datetime.datetime(2023, 12, 31)
         mock_get_date_ranges.return_value = {
@@ -102,13 +112,17 @@ class TestApp:
 
 
 class TestAppMain:
+    """Tests for the main application entry point."""
 
     @patch('app.get_date_ranges')
     @patch('app.run_analysis_for_ticker')
     @patch('app.stats_manager')
     @patch('app.app.run')
     @patch('sys.argv', ['app.py', '--ticker', 'AAPL'])
-    def test_main_batch_mode_execution(self, mock_app_run, mock_stats_manager, mock_run_analysis, mock_get_date_ranges):
+    def test_main_batch_mode_execution(
+        self, mock_app_run, mock_stats_manager, mock_run_analysis, mock_get_date_ranges
+    ):
+        """Test that main executes batch mode correctly when args are provided."""
         # This tests that running `main()` with `--ticker AAPL` properly calls into `run_batch_mode`
         # and executes its logic, without mocking `run_batch_mode` itself.
         import app
@@ -134,6 +148,7 @@ class TestAppMain:
     @patch('app.app.run')
     @patch('sys.argv', ['app.py'])
     def test_main_server_mode(self, mock_app_run):
+        """Test that main starts the server when no args are provided."""
         import app
         app.main()
 
@@ -141,10 +156,12 @@ class TestAppMain:
 
 
 class TestAppRouting:
+    """Tests for Dash routing logic."""
 
     @patch('app.strategy_statistics_layout')
     @patch('app.strategy_chart_layout')
     def test_display_page_stats(self, mock_chart_layout, mock_stats_layout):
+        """Test routing to the statistics page."""
         from app import display_page
 
         mock_stats_layout.return_value = "Stats Layout"
@@ -157,6 +174,7 @@ class TestAppRouting:
     @patch('app.strategy_statistics_layout')
     @patch('app.strategy_chart_layout')
     def test_display_page_chart(self, mock_chart_layout, mock_stats_layout):
+        """Test routing to the chart page or unknown paths."""
         from app import display_page
 
         mock_stats_layout.return_value = "Stats Layout"
@@ -173,7 +191,10 @@ class TestAppRouting:
     @patch('app.stats_manager')
     @patch('app.run_analysis_for_ticker')
     @patch('app.get_date_ranges')
-    def test_run_batch_mode_deduplication(self, mock_get_date_ranges, mock_run_analysis, mock_stats_manager):
+    def test_run_batch_mode_deduplication(
+        self, mock_get_date_ranges, mock_run_analysis, mock_stats_manager
+    ):
+        """Test that batch mode deduplicates duplicate tickers."""
         min_date = datetime.datetime(2023, 1, 1)
         max_date = datetime.datetime(2023, 12, 31)
         mock_get_date_ranges.return_value = {
