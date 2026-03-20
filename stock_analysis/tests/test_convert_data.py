@@ -1,16 +1,20 @@
 
+"""
+Unit tests for the convert_data module.
+"""
+
 import unittest
-from unittest.mock import patch, mock_open, MagicMock
-import json
-import os
-import io
+from unittest.mock import patch, mock_open
+
 from convert_data import migrate
 
 class TestConvertData(unittest.TestCase):
+    """Test suite for the migrate function in convert_data.py."""
 
     @patch('os.path.exists')
     @patch('builtins.print')
     def test_migrate_file_not_found(self, mock_print, mock_exists):
+        """Test migrate function when the file is not found."""
         mock_exists.return_value = False
         migrate('non_existent.json')
         mock_print.assert_called_with("Stats file not found at non_existent.json")
@@ -19,6 +23,7 @@ class TestConvertData(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open, read_data='[]')
     @patch('json.dump')
     def test_migrate_empty_data(self, mock_json_dump, mock_file, mock_exists):
+        """Test migrate function with empty data."""
         mock_exists.return_value = True
         migrate('stats.json')
         mock_json_dump.assert_called_once_with([], mock_file(), indent=2)
@@ -27,9 +32,12 @@ class TestConvertData(unittest.TestCase):
     @patch('builtins.open', new_callable=mock_open)
     @patch('json.load')
     @patch('json.dump')
-    def test_migrate_successful_conversion(self, mock_json_dump, mock_json_load, mock_file, mock_exists):
+    def test_migrate_successful_conversion(
+        self, mock_json_dump, mock_json_load, _mock_file, mock_exists
+    ):
+        """Test migrate function with successful conversion of various data scenarios."""
         mock_exists.return_value = True
-        
+
         # Input data with various scenarios
         input_data = [
             {
@@ -55,7 +63,7 @@ class TestConvertData(unittest.TestCase):
         migrate('stats.json')
 
         # Capture the data passed to json.dump
-        args, kwargs = mock_json_dump.call_args
+        args, _ = mock_json_dump.call_args
         dumped_data = args[0]
 
         # Verify conversions
@@ -64,23 +72,25 @@ class TestConvertData(unittest.TestCase):
         self.assertEqual(aapl["SMA"]["Average Return"], 0.012)
         self.assertEqual(aapl["SMA"]["Win Rate"], 0.6)
         self.assertEqual(aapl["SMA"]["Other Metric"], "Value")
-        
+
         self.assertEqual(aapl["RSI"]["Total Return"], 0.1234)
         self.assertEqual(aapl["RSI"]["Average Return"], 0.0)
         self.assertEqual(aapl["RSI"]["Win Rate"], 0.5)
-        
+
         # Verify date keys were ignored
         self.assertEqual(aapl["date-begin"], "2023-01-01")
 
     @patch('os.path.exists')
-    @patch('builtins.open', new_callable=mock_open, read_data='[{"TICK": {"Strat": {"Total Return": "100%"}}}]')
+    @patch('builtins.open', new_callable=mock_open)
     def test_migrate_writes_to_file(self, mock_file, mock_exists):
+        """Test migrate function properly writes converted data back to the file."""
         mock_exists.return_value = True
-        
-        # We need to mock json.load because mock_open's read_data doesn't automatically feed json.load in some versions/setups if not careful
-        # Actually, migrate calls json.load(f). mock_open() returns a file handle.
+
+        # We need to mock json.load because mock_open's read_data doesn't automatically
+        # feed json.load in some versions/setups if not careful. Actually, migrate calls
+        # json.load(f). mock_open() returns a file handle.
         # Let's just use the real json.load and mock_open
-        
+
         with patch('json.load') as mock_load:
             mock_load.return_value = [{"TICK": {"Strat": {"Total Return": "100%"}}}]
             with patch('json.dump') as mock_dump:
