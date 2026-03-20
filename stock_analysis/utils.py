@@ -255,12 +255,19 @@ class _TradeEvaluator:
 def _evaluate_trade_sequence(df, initial_capital, exit_date, exit_price):
     evaluator = _TradeEvaluator(initial_capital)
 
-    # Use itertuples for a substantial speedup over explicit iteration with .iloc
-    for row in df.itertuples():
-        if row.Position == 1.0:
-            evaluator.process_buy(row.Index, row.Close)
-        elif row.Position == -1.0:
-            evaluator.process_sell(row.Index, row.Close)
+    # PERFORMANCE OPTIMIZATION: A true paradigm shift to vectorized operations is not completely
+    # possible due to the stateful nature of integer fractional share capital calculation
+    # (`shares_to_buy = capital // price`). However, we can use a significantly faster array
+    # iteration over pandas core properties.
+    dates = df.index
+    closes = df["Close"].values
+    positions = df["Position"].values
+
+    for date_val, close_val, pos_val in zip(dates, closes, positions):
+        if pos_val == 1.0:
+            evaluator.process_buy(date_val, close_val)
+        elif pos_val == -1.0:
+            evaluator.process_sell(date_val, close_val)
 
     evaluator.close_open_position(exit_date, exit_price)
 
