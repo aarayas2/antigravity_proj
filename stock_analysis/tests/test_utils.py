@@ -1,17 +1,23 @@
-import sys
+"""Unit tests for the utils module."""
+# pylint: disable=too-many-lines, protected-access, import-outside-toplevel
+# pylint: disable=unused-argument, redefined-outer-name, reimported, unused-variable, unused-import
+# pylint: disable=too-many-locals, line-too-long
+import datetime
 import os
+import sys
+import unittest
+from unittest.mock import MagicMock, patch
+import pandas as pd
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import unittest
-from unittest.mock import patch, MagicMock
-import pandas as pd
-import datetime
-
-from utils import calculate_metrics, _compile_performance_metrics
+from utils import calculate_metrics, _compile_performance_metrics  # pylint: disable=wrong-import-position
 
 class TestLoadData(unittest.TestCase):
+    """Tests for the load_data utility function."""
     @patch('utils._cache.get_data')
     def test_load_data_calls_cache(self, mock_get_data):
+        """Test that load_data calls the cache."""
         from utils import load_data
 
         # Setup mock return value
@@ -33,6 +39,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_download_failure(self, mock_exists, mock_makedirs, mock_download):
+        """Test load_data behavior on download failure."""
         from utils import StockDataCache, load_data
 
         # Simulate cache miss
@@ -55,6 +62,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_fetches_and_caches(self, mock_exists, mock_makedirs, mock_download):
+        """Test load_data fetches from API and caches data."""
         from utils import StockDataCache, load_data
 
         # Simulate cache miss by mocking os.path.exists
@@ -83,6 +91,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_cache_hit_empty_cache(self, mock_exists, mock_makedirs, mock_download, mock_read_json):
+        """Test cache hit but empty cached data."""
         from utils import StockDataCache, load_data
 
         mock_exists.return_value = True
@@ -115,6 +124,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_returns_none_on_empty(self, mock_exists, mock_makedirs, mock_download):
+        """Test load_data returns None when fetched data is empty."""
         from utils import StockDataCache, load_data
 
         # Simulate cache miss
@@ -137,6 +147,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_cache_hit(self, mock_exists, mock_makedirs, mock_read_json):
+        """Test successful cache hit."""
         from utils import StockDataCache, load_data
 
         mock_exists.return_value = True
@@ -165,6 +176,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_cache_hit_older_data(self, mock_exists, mock_makedirs, mock_download, mock_read_json):
+        """Test cache hit with partially missing older data."""
         from utils import StockDataCache, load_data
 
         mock_exists.return_value = True
@@ -195,6 +207,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_cache_hit_newer_data(self, mock_exists, mock_makedirs, mock_download, mock_read_json):
+        """Test cache hit with partially missing newer data."""
         from utils import StockDataCache, load_data
 
         mock_exists.return_value = True
@@ -225,6 +238,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_cache_exception_fallback(self, mock_exists, mock_makedirs, mock_download, mock_read_json):
+        """Test fallback to API when cache reading throws exception."""
         from utils import StockDataCache, load_data
 
         mock_exists.return_value = True
@@ -254,6 +268,7 @@ class TestLoadData(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_download_exception(self, mock_exists, mock_makedirs, mock_download):
+        """Test load_data handles API download exception."""
         from utils import StockDataCache, load_data
 
         # Simulate cache miss
@@ -273,13 +288,16 @@ class TestLoadData(unittest.TestCase):
             self.assertIsNone(result)
 
 class TestCalculateMetrics(unittest.TestCase):
+    """Tests for the calculate_metrics function."""
     def test_empty_dataframe(self):
+        """Test calculate_metrics with an empty dataframe."""
         df = pd.DataFrame()
         result = calculate_metrics(df, "dummy_strategy")
         self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
 
     def test_backtesting_loop_trades(self):
+        """Test backtesting loop logic for tracking trades."""
         dates = pd.date_range('2023-01-01', periods=5)
         # capital starts at 10000.0
         # Buy on day 1 (price 100): buy 100 shares. Capital: 0.
@@ -310,6 +328,7 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(trades[1]['exit_price'], 200)
 
     def test_sell_without_position(self):
+        """Test sell signal without an open position."""
         dates = pd.date_range('2023-01-01', periods=2)
         df = pd.DataFrame({
             'Close': [100, 150],
@@ -322,18 +341,21 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Trades History'], [])
 
     def test_missing_position_column(self):
+        """Test dataframe missing Position column."""
         df = pd.DataFrame({'Close': [100, 105, 110]})
         result = calculate_metrics(df, "dummy_strategy")
         self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
 
     def test_no_trades(self):
+        """Test timeframe with zero trades."""
         df = pd.DataFrame({'Close': [100, 105, 110], 'Position': [0, 0, 0]})
         result = calculate_metrics(df, "dummy_strategy")
         self.assertEqual(result['Total Return'], 0.0)
         self.assertEqual(result['Number of Trades'], 0)
 
     def test_single_winning_trade(self):
+        """Test metrics calculation with single winning trade."""
         dates = pd.date_range('2023-01-01', periods=3)
         df = pd.DataFrame({
             'Close': [100, 110, 105],
@@ -347,6 +369,7 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Average Return'], 0.1)
 
     def test_single_losing_trade(self):
+        """Test metrics calculation with single losing trade."""
         dates = pd.date_range('2023-01-01', periods=3)
         df = pd.DataFrame({
             'Close': [100, 90, 95],
@@ -360,6 +383,7 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Average Return'], -0.1)
 
     def test_multiple_trades(self):
+        """Test metrics calculation with multiple trades."""
         dates = pd.date_range('2023-01-01', periods=4)
         df = pd.DataFrame({
             'Close': [100, 120, 150, 135],
@@ -373,6 +397,7 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Average Return'], 0.05)
 
     def test_open_position_at_end(self):
+        """Test backtest logic when position is left open at the end."""
         dates = pd.date_range('2023-01-01', periods=2)
         df = pd.DataFrame({
             'Close': [100, 150],
@@ -386,6 +411,7 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Average Return'], 0.5)
 
     def test_insufficient_capital(self):
+        """Test buy signal with insufficient capital."""
         dates = pd.date_range('2023-01-01', periods=2)
         df = pd.DataFrame({
             'Close': [20000, 25000],
@@ -399,6 +425,7 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Average Return'], 0.0)
 
     def test_zero_buy_price(self):
+        """Test buy signal with zero price."""
         dates = pd.date_range('2023-01-01', periods=2)
         df = pd.DataFrame({
             'Close': [0.0, 150.0],
@@ -412,6 +439,7 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(result['Average Return'], 0.0)
 
     def test_zero_exit_price_and_buy_price(self):
+        """Test sell logic when exit price is zero."""
         dates = pd.date_range('2023-01-01', periods=2)
         # Force a case where buy_price could be 0, but since price > 0 is required,
         # it shouldn't buy. Let's test a valid buy, but sell price is 0.
@@ -544,10 +572,12 @@ class TestCalculateMetrics(unittest.TestCase):
         self.assertEqual(trades[0]['entry_price'], 100.0)
         self.assertEqual(trades[0]['exit_price'], 100.0)
         self.assertEqual(trades[0]['profit'], 0.0)
-        
+
 class TestApplyStrategy(unittest.TestCase):
+    """Tests for apply_strategy function."""
     @patch('utils.STRATEGIES')
     def test_apply_strategy_found(self, mock_strategies):
+        """Test apply_strategy calls strategy function."""
         # Arrange
         strategy_name = "test_strategy"
         df_input = pd.DataFrame({'Close': [100, 105]})
@@ -567,6 +597,7 @@ class TestApplyStrategy(unittest.TestCase):
 
     @patch('utils.STRATEGIES')
     def test_apply_strategy_not_found(self, mock_strategies):
+        """Test apply_strategy handles missing strategy gracefully."""
         # Arrange
         strategy_name = "unknown_strategy"
         df_input = pd.DataFrame({'Close': [100, 105]})
@@ -581,8 +612,10 @@ class TestApplyStrategy(unittest.TestCase):
         pd.testing.assert_frame_equal(result, df_input)
 
 class TestStockDataCache(unittest.TestCase):
+    """Tests for StockDataCache class."""
     @patch('utils.yf.download')
     def test_download_from_yf_success(self, mock_download):
+        """Test successful download from yfinance."""
         from utils import _cache
         import datetime
         ticker = "AAPL"
@@ -599,6 +632,7 @@ class TestStockDataCache(unittest.TestCase):
 
     @patch('utils.yf.download')
     def test_download_from_yf_empty(self, mock_download):
+        """Test empty dataframe returned from yfinance."""
         from utils import _cache
         import datetime
         ticker = "AAPL"
@@ -615,6 +649,7 @@ class TestStockDataCache(unittest.TestCase):
 
     @patch('utils.yf.download')
     def test_download_from_yf_multiindex(self, mock_download):
+        """Test MultiIndex handling when downloading from yfinance."""
         from utils import _cache
         import datetime
         ticker = "AAPL"
@@ -638,6 +673,7 @@ class TestStockDataCache(unittest.TestCase):
 
     @patch('utils.yf.download')
     def test_download_from_yf_exception(self, mock_download):
+        """Test API exceptions when downloading from yfinance."""
         from utils import _cache
         import datetime
         ticker = "AAPL"
@@ -652,8 +688,10 @@ class TestStockDataCache(unittest.TestCase):
         self.assertIsNone(result)
 
 class TestLoadDataWrapper(unittest.TestCase):
+    """Tests for load_data delegating to Cache."""
     @patch('utils._cache.get_data')
     def test_load_data_delegates_to_cache(self, mock_get_data):
+        """Test load_data properly wraps cache method."""
         from utils import load_data
 
         expected_df = pd.DataFrame({'Close': [100.0, 105.0]})
@@ -707,6 +745,7 @@ class TestLoadDataWrapper(unittest.TestCase):
         self.assertIsNone(result)
 
 class TestLoadDataUtility(unittest.TestCase):
+    """Additional tests for load_data utility."""
     @patch('yfinance.download')
     @patch('utils.StockDataCache.get_data')
     def test_load_data_with_yfinance_and_cache_mocked(self, mock_get_data, mock_download):
@@ -739,6 +778,7 @@ class TestLoadDataUtility(unittest.TestCase):
 
 
 class TestLoadDataWrapperFunction(unittest.TestCase):
+    """Tests for load_data wrapper function."""
     @patch('utils.StockDataCache.get_data')
     @patch('yfinance.download')
     def test_load_data_utility_function(self, mock_yf_download, mock_get_data):
@@ -771,7 +811,9 @@ class TestLoadDataWrapperFunction(unittest.TestCase):
 
 
 class TestStockDataCachePathTraversal(unittest.TestCase):
+    """Tests to prevent path traversal in cache."""
     def test_get_file_path_traversal(self):
+        """Test potential path traversal throws ValueError."""
         from utils import StockDataCache
         cache = StockDataCache()
 
@@ -802,9 +844,11 @@ class TestStockDataCachePathTraversal(unittest.TestCase):
                 cache._get_file_path("dummy")
 
 class TestLoadDataMissingTests(unittest.TestCase):
+    """Tests to cover remaining coverage gaps."""
     @patch('yfinance.download')
     @patch('utils.StockDataCache.get_data')
     def test_load_data_success(self, mock_get_data, mock_download):
+        """Test successful loading of data."""
         from utils import load_data
 
         ticker = "TSLA"
@@ -823,6 +867,7 @@ class TestLoadDataMissingTests(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_fetching_failure(self, mock_exists, mock_makedirs, mock_download):
+        """Test download failure."""
         from utils import load_data, StockDataCache
 
         mock_exists.return_value = False
@@ -843,6 +888,7 @@ class TestLoadDataMissingTests(unittest.TestCase):
     @patch('os.makedirs')
     @patch('os.path.exists')
     def test_load_data_fetching_empty(self, mock_exists, mock_makedirs, mock_download):
+        """Test fetching handles empty df."""
         from utils import load_data, StockDataCache
 
         mock_exists.return_value = False
@@ -862,6 +908,7 @@ class TestLoadDataMissingTests(unittest.TestCase):
     @patch('yfinance.download')
     @patch('utils.StockDataCache.get_data')
     def test_load_data_none(self, mock_get_data, mock_download):
+        """Test None is returned on missing cache data."""
         from utils import load_data
 
         ticker = "INVALID"
@@ -875,30 +922,10 @@ class TestLoadDataMissingTests(unittest.TestCase):
         mock_get_data.assert_called_once_with(ticker, start_date, end_date)
         self.assertIsNone(result)
 
-    @patch('yfinance.download')
-    @patch('os.makedirs')
-    @patch('os.path.exists')
-    def test_load_data_fetching_failure(self, mock_exists, mock_makedirs, mock_download):
-        from utils import StockDataCache, load_data
-
-        ticker = "FAIL"
-        start_date = datetime.date(2023, 1, 1)
-        end_date = datetime.date(2023, 1, 31)
-
-        # Force a cache miss so it attempts to download
-        mock_exists.return_value = False
-
-        with patch('utils._cache', StockDataCache(data_dir='test_data')):
-            # Rationale mandates mocking yfinance.download to raise an Exception
-            mock_download.side_effect = Exception("Network Error")
-
-            result = load_data(ticker, start_date, end_date)
-
-            mock_download.assert_called_once()
-            self.assertIsNone(result)
-
 class TestCompilePerformanceMetrics(unittest.TestCase):
+    """Tests for compiling performance metrics."""
     def test_empty_trades_history(self):
+        """Test compile behavior on empty trades."""
         initial_capital = 10000.0
         final_capital = 10000.0
         trades_history = []
@@ -913,7 +940,9 @@ class TestCompilePerformanceMetrics(unittest.TestCase):
 
 
 class TestTradeEvaluator(unittest.TestCase):
+    """Tests for TradeEvaluator."""
     def setUp(self):
+        """Setup mocks."""
         # Mock pandas and yfinance for the restricted sandbox environment
         self.patcher_pd = patch.dict('sys.modules', {'pandas': MagicMock()})
         self.patcher_yf = patch.dict('sys.modules', {'yfinance': MagicMock()})
@@ -921,10 +950,12 @@ class TestTradeEvaluator(unittest.TestCase):
         self.patcher_yf.start()
 
     def tearDown(self):
+        """Teardown mocks."""
         self.patcher_pd.stop()
         self.patcher_yf.stop()
 
     def test_successful_buy(self):
+        """Test valid buy trade process."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(1000)
         evaluator.process_buy("2023-01-01", 100)
@@ -934,6 +965,7 @@ class TestTradeEvaluator(unittest.TestCase):
         self.assertEqual(evaluator.buy_date, "2023-01-01")
 
     def test_insufficient_capital(self):
+        """Test buy signal with insufficient capital."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(50)
         evaluator.process_buy("2023-01-01", 100)
@@ -943,6 +975,7 @@ class TestTradeEvaluator(unittest.TestCase):
         self.assertIsNone(evaluator.buy_date)
 
     def test_insufficient_capital_exact_equality(self):
+        """Test buy fails if capital is exactly price."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(100)
         evaluator.process_buy("2023-01-01", 100)
@@ -952,6 +985,7 @@ class TestTradeEvaluator(unittest.TestCase):
         self.assertIsNone(evaluator.buy_date)
 
     def test_zero_and_negative_price_handling(self):
+        """Test buy fails gracefully on non-positive prices."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(1000)
         evaluator.process_buy("2023-01-01", 0)
@@ -963,12 +997,13 @@ class TestTradeEvaluator(unittest.TestCase):
         self.assertEqual(evaluator.capital, 1000)
 
     def test_sequential_buy_signals_state_accumulation(self):
+        """Test repeated buys accumulate positions properly."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(1000)
         evaluator.process_buy("2023-01-01", 400)
         self.assertEqual(evaluator.position_size, 2)
         self.assertEqual(evaluator.capital, 200)
-        
+
         # Second buy signal adds to position
         evaluator.process_buy("2023-01-02", 100)
         self.assertEqual(evaluator.position_size, 4)
@@ -977,12 +1012,13 @@ class TestTradeEvaluator(unittest.TestCase):
         self.assertEqual(evaluator.buy_date, "2023-01-02")
 
     def test_successful_sell(self):
+        """Test valid sell logic."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(1000)
         evaluator.process_buy("2023-01-01", 100)
         self.assertEqual(evaluator.position_size, 10)
         self.assertEqual(evaluator.capital, 0)
-        
+
         evaluator.process_sell("2023-01-02", 150)
         self.assertEqual(evaluator.position_size, 0)
         self.assertEqual(evaluator.capital, 1500)
@@ -991,11 +1027,12 @@ class TestTradeEvaluator(unittest.TestCase):
         self.assertEqual(evaluator.trades_history[0]["profit_pct"], 50.0)
 
     def test_close_open_positions(self):
+        """Test open position gets closed cleanly at end."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(1000)
         evaluator.process_buy("2023-01-01", 100)
         self.assertEqual(evaluator.position_size, 10)
-        
+
         evaluator.close_open_position("2023-01-31", 200)
         self.assertEqual(evaluator.position_size, 10) # close_open_position doesn't reset position_size in current impl
         self.assertEqual(evaluator.capital, 2000)
