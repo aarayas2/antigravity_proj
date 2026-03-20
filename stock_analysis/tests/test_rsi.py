@@ -1,17 +1,19 @@
+"""Unit tests for the RSI strategy module."""
 import os
 import sys
-import pandas as pd
-import numpy as np
-import pandas_ta as ta
+from unittest.mock import MagicMock, patch
+
 import pytest
-from unittest.mock import MagicMock
+import numpy as np
+import pandas as pd
 
 # Add the project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from strategy.RSI import apply_strategy, needs_subplots, add_traces, get_signals
+from strategy.RSI import apply_strategy, needs_subplots, add_traces, get_signals  # pylint: disable=wrong-import-position
 
 def test_rsi_apply_strategy():
+    """Test that the RSI strategy correctly adds columns and signals."""
     np.random.seed(42)
     dates = pd.date_range(start="2023-01-01", periods=30)
 
@@ -39,19 +41,23 @@ def test_rsi_apply_strategy():
     assert (result_df['Signal'].iloc[14:20] == -1.0).any()
 
     # Ensure there's a buy signal as well. To get RSI < 30 quickly we can drop price fast.
-    # In RSI, the 14-period lookback might be slow to drop if we had a strong uptrend before.
+    # In RSI, the 14-period lookback might be slow to drop
+    # if we had a strong uptrend before.
     # Let's verify our specific mock dataframe values.
     # We will just print or assert safely.
     if (result_df['Signal'].iloc[25:] == 1.0).any():
         assert True
     else:
-        # Instead of failing on test setup logic, let's just make sure the column exists and type is correct.
+        # Instead of failing on test setup logic,
+        # let's just make sure the column exists and type is correct.
         # But for robustness, let's test a strong drop to ensure 1.0 signal.
-        df_drop = pd.DataFrame({'Close': [100]*14 + [10]*5}, index=pd.date_range("2023-01-01", periods=19))
+        df_drop = pd.DataFrame({'Close': [100]*14 + [10]*5},
+                               index=pd.date_range("2023-01-01", periods=19))
         res_drop = apply_strategy(df_drop)
         assert (res_drop['Signal'] == 1.0).any()
 
 def test_rsi_not_enough_data():
+    """Test RSI behavior with insufficient data."""
     dates = pd.date_range(start="2023-01-01", periods=10)
     closes = np.full(10, 100.0)
     df = pd.DataFrame({'Close': closes}, index=dates)
@@ -61,27 +67,30 @@ def test_rsi_not_enough_data():
     # The existing code doesn't check if 'RSI_14' is in columns.
     # We need to expect KeyError for the current RSI.py code!
     with pytest.raises(KeyError):
-        result_df = apply_strategy(df)
+        _ = apply_strategy(df)
 
 def test_rsi_empty_df():
+    """Test RSI behavior with an empty DataFrame."""
     df = pd.DataFrame(columns=['Close'])
 
-    # Based on our analysis, an empty dataframe also fails due to KeyError or ValueError depending on pandas_ta version.
-    # However we can just catch any exception it throws since it's an edge case the strategy doesn't handle.
+    # Based on our analysis, an empty dataframe also fails due to
+    # KeyError or ValueError depending on pandas_ta version.
+    # However we can just catch any exception it throws
+    # since it's an edge case the strategy doesn't handle.
     try:
-        result_df = apply_strategy(df)
-        if 'RSI_14' in result_df.columns:
-            assert result_df.empty
-    except Exception as e:
+        res_df = apply_strategy(df)
+        if 'RSI_14' in res_df.columns:
+            assert res_df.empty
+    except Exception:  # pylint: disable=broad-exception-caught
         pass
 
 def test_needs_subplots():
+    """Test if RSI strategy requires subplots."""
     assert needs_subplots() is True
 
-from unittest.mock import patch
-
 @patch('strategy.RSI.go.Scatter')
-def test_add_traces(mock_scatter):
+def test_add_traces(mock_scatter):  # pylint: disable=unused-argument
+    """Test adding RSI traces to a Plotly figure."""
     fig = MagicMock()
     df = pd.DataFrame({
         'RSI_14': [50.0, 60.0]
@@ -103,6 +112,7 @@ def test_add_traces(mock_scatter):
     assert hline_calls[1][1]['y'] == 30
 
 def test_get_signals():
+    """Test extraction of buy and sell signals."""
     dates = pd.date_range(start="2023-01-01", periods=5)
     df = pd.DataFrame({
         'Close': [100.0, 105.0, 95.0, 110.0, 90.0],
@@ -122,6 +132,7 @@ def test_get_signals():
     assert sell_signals.index[1] == dates[3]
 
 def test_get_signals_no_signal_column():
+    """Test signal extraction when no Signal column exists."""
     dates = pd.date_range(start="2023-01-01", periods=3)
     df = pd.DataFrame({'Close': [100.0, 105.0, 95.0]}, index=dates)
 
@@ -133,6 +144,7 @@ def test_get_signals_no_signal_column():
     pd.testing.assert_frame_equal(sell_signals, pd.DataFrame())
 
 def test_get_signals_empty_df():
+    """Test signal extraction with an empty DataFrame."""
     df = pd.DataFrame()
 
     buy_signals, sell_signals = get_signals(df)
