@@ -33,7 +33,7 @@ server = app.server
 
 app.title = "Strategy Analysis"
 
-def run_batch_mode(tickers_str: str):
+def run_batch_mode(tickers_str: str):  # pylint: disable=too-many-locals
     """
     Executes the batch analysis for a list of tickers concurrently.
     """
