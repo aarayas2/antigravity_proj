@@ -1,14 +1,19 @@
+"""Tests for MACD strategy."""
 import os
 import sys
-import pandas as pd
+from unittest.mock import MagicMock, patch
+
 import numpy as np
-import pandas_ta as ta
-from unittest.mock import MagicMock
+import pandas as pd
+import pandas_ta  # pylint: disable=unused-import # Required to inject .ta into pandas DataFrame
 
-# Add the project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-
-from strategy.MACD import apply_strategy, get_signals, needs_subplots, add_traces
+from strategy.MACD import (  # pylint: disable=wrong-import-position, import-error
+    add_traces,
+    apply_strategy,
+    get_signals,
+    needs_subplots,
+)
 
 def test_macd_apply_strategy():
     """Test apply_strategy with normal data to calculate MACD and signals."""
@@ -34,8 +39,10 @@ def test_macd_apply_strategy():
 
     # Verify Signal logic: 1.0 if MACD > MACDs else 0.0
     valid_mask = result_df['MACD_12_26_9'].notna() & result_df['MACDs_12_26_9'].notna()
-    expected_signal = (result_df.loc[valid_mask, 'MACD_12_26_9'] > result_df.loc[valid_mask, 'MACDs_12_26_9']).astype(float)
-    pd.testing.assert_series_equal(result_df.loc[valid_mask, 'Signal'], expected_signal, check_names=False)
+    expected_signal = (result_df.loc[valid_mask, 'MACD_12_26_9'] > \
+                       result_df.loc[valid_mask, 'MACDs_12_26_9']).astype(float)
+    pd.testing.assert_series_equal(
+        result_df.loc[valid_mask, 'Signal'], expected_signal, check_names=False)
 
     # Verify Position logic: Signal.diff()
     expected_position = result_df['Signal'].diff()
@@ -86,10 +93,8 @@ def test_macd_needs_subplots():
     """Test needs_subplots returns True as MACD uses a sub-panel."""
     assert needs_subplots() is True
 
-from unittest.mock import patch
-
 @patch('strategy.MACD.go.Scatter')
-def test_macd_add_traces(mock_scatter):
+def test_macd_add_traces(_mock_scatter):
     """Test add_traces adds MACD Line, Signal Line, and Histogram traces."""
     fig = MagicMock()
     df = pd.DataFrame({
@@ -110,7 +115,7 @@ def test_macd_add_traces(mock_scatter):
         assert kwargs.get('col') == 1
 
 @patch('strategy.MACD.go.Scatter')
-def test_macd_add_traces_no_columns(mock_scatter):
+def test_macd_add_traces_no_columns(_mock_scatter):
     """Test add_traces does nothing if MACD columns are missing."""
     fig = MagicMock()
     df = pd.DataFrame({'Close': [100.0, 101.0]})
