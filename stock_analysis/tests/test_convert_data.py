@@ -99,5 +99,27 @@ class TestConvertData(unittest.TestCase):
                 # Check that it was opened for writing at the end
                 mock_file.assert_any_call('stats.json', 'w', encoding='utf-8')
 
+    def test_main_execution_coverage(self):
+        """Test the main execution block coverage directly."""
+        import runpy
+        import convert_data
+        
+        script_path = convert_data.__file__
+        
+        # Test default arg
+        with patch('sys.argv', ['convert_data.py']):
+            with patch('os.path.exists', return_value=False):
+                with patch('builtins.print') as mock_print:
+                    runpy.run_path(script_path, run_name='__main__')
+                    mock_print.assert_called_with("Stats file not found at stock_analysis/data/stats.json")
+                    
+        # Test custom arg
+        with patch('sys.argv', ['convert_data.py', 'custom_stats.json']):
+            with patch('os.path.exists', return_value=False):
+                with patch('builtins.print') as mock_print:
+                    runpy.run_path(script_path, run_name='__main__')
+                    mock_print.assert_called_with("Stats file not found at custom_stats.json")
+
+
 if __name__ == '__main__':
     unittest.main()
