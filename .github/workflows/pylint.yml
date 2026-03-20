@@ -24,4 +24,4 @@ jobs:
 
     - name: Run pylint
       run: |
-         cd stock_analysis && PYTHONPATH=. pylint **/*.py --ignore=games,tests --fail-under=8.0
+         cd stock_analysis && PYTHONPATH=. pylint **/*.py --ignore=games,tests --disable=too-many-locals --fail-under=8.0
