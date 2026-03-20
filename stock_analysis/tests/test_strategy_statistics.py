@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # pylint: disable=wrong-import-position,import-error
-from pages.strategy_statistics import update_stats_table, update_tickers_input
+from pages.strategy_statistics import update_stats_table, update_tickers_input, disable_process_button
 
 class TestStrategyStatistics(unittest.TestCase):
     """Test suite for strategy statistics logic."""
@@ -102,6 +102,18 @@ class TestStrategyStatistics(unittest.TestCase):
         self.assertEqual(update_tickers_input([], []), "")
         # Missing 'Ticker' key
         self.assertEqual(update_tickers_input([{"Other": "X"}], None), "")
+
+    def test_disable_process_button(self):
+        """Tests disable_process_button with various inputs."""
+        # Empty inputs should return True (disabled)
+        self.assertTrue(disable_process_button(None))
+        self.assertTrue(disable_process_button(""))
+        self.assertTrue(disable_process_button("   "))
+        
+        # Valid ticker strings should return False (enabled)
+        self.assertFalse(disable_process_button("AAPL"))
+        self.assertFalse(disable_process_button("AAPL;MSFT"))
+        self.assertFalse(disable_process_button("  AAPL  "))
 
 if __name__ == '__main__':
     unittest.main()
