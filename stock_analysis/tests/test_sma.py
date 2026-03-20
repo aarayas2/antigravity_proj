@@ -8,7 +8,7 @@ from unittest.mock import MagicMock, patch
 # Add the project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from strategy.SMA import apply_strategy, get_signals, needs_subplots, add_traces
+from strategy.sma import apply_strategy, get_signals, needs_subplots, add_traces
 
 def test_sma_apply_strategy():
     """Test apply_strategy with normal data to calculate SMA and signals."""
@@ -86,7 +86,7 @@ def test_sma_needs_subplots():
     """Test needs_subplots returns False as SMA overlaps the price chart."""
     assert needs_subplots() is False
 
-@patch('strategy.SMA.go.Scatter')
+@patch('strategy.sma.go.Scatter')
 def test_sma_add_traces_with_main_row(mock_scatter):
     """Test add_traces adds SMA lines to the main row."""
     fig = MagicMock()
@@ -106,7 +106,7 @@ def test_sma_add_traces_with_main_row(mock_scatter):
         assert kwargs.get('row') == 1
         assert kwargs.get('col') == 1
 
-@patch('strategy.SMA.go.Scatter')
+@patch('strategy.sma.go.Scatter')
 def test_sma_add_traces_no_main_row(mock_scatter):
     """Test add_traces adds SMA lines without specifying row/col."""
     fig = MagicMock()
@@ -126,7 +126,7 @@ def test_sma_add_traces_no_main_row(mock_scatter):
         assert 'row' not in kwargs
         assert 'col' not in kwargs
 
-@patch('strategy.SMA.go.Scatter')
+@patch('strategy.sma.go.Scatter')
 def test_sma_add_traces_missing_columns(mock_scatter):
     """Test add_traces handles missing columns gracefully."""
     fig = MagicMock()
