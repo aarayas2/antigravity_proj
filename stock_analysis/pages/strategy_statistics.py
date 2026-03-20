@@ -1,3 +1,6 @@
+"""
+Strategy statistics page layout and callbacks.
+"""
 import dash
 from dash import dcc, html, Input, Output, callback
 import dash_bootstrap_components as dbc
@@ -6,6 +9,7 @@ import pandas as pd
 from utils import stats_manager
 
 def layout():
+    """Returns the layout for the strategy statistics page."""
     return html.Div([
         html.H2("Strategy Statistics", className="mb-4"),
         dbc.Row([
@@ -33,7 +37,7 @@ def layout():
                     ),
                     dbc.Button("Process", id="process-button", color="primary", disabled=True)
                 ])
-            ], md=6)        
+            ], md=6)
         ], className="mb-4"),
         dbc.Spinner(
             html.Div(id='batch-results-container', className="mb-4"),
@@ -43,16 +47,21 @@ def layout():
         html.Div(id='stats-table-container')
     ])
 
+# pylint: disable=too-many-locals
+@callback(
+    Output('stats-table-container', 'children'),
+    Input('win-rate-slider', 'value')
+)
 @callback(
     Output('stats-table-container', 'children'),
     Input('win-rate-slider', 'value')
 )
 def update_stats_table(min_win_rate):
     """
-    Reads strategy statistics, filters by the minimum win rate, 
+    Reads strategy statistics, filters by the minimum win rate,
     and returns a formatted, sortable Dash DataTable.
     """
-    data = stats_manager._storage.read()
+    data = stats_manager._storage.read() # pylint: disable=protected-access
 
     rows = []
     min_win_rate_ratio = min_win_rate / 100.0
@@ -69,7 +78,7 @@ def update_stats_table(min_win_rate):
 
         for strategy, metrics in stats.items():
             # Skip non-strategy metadata keys like 'date-begin' and 'date-end'
-            if type(metrics) is not dict:
+            if type(metrics) is not dict: # pylint: disable=unidiomatic-typecheck
                 continue
 
             win_rate_val = metrics.get('Win Rate', 0.0)
@@ -96,7 +105,7 @@ def update_stats_table(min_win_rate):
 
     df = pd.DataFrame(rows)
 
-    columnDefs = [
+    column_defs = [
         {"field": "Ticker"},
         {"field": "Strategy"},
         {
@@ -122,7 +131,7 @@ def update_stats_table(min_win_rate):
     table = dag.AgGrid(
         id='stats-table',
         rowData=row_data,
-        columnDefs=columnDefs,
+        columnDefs=column_defs,
         dashGridOptions={"defaultColDef": {"sortable": True}},
         className="ag-theme-quartz-dark",
         style={"height": dynamic_height, "width": "100%"},
@@ -149,18 +158,21 @@ def update_stats_table(min_win_rate):
     Input('stats-table', 'rowData')
 )
 def update_tickers_input(virtualRowData, rowData):
+    # pylint: disable=invalid-name
     """
-    Updates the tickers input field based on the currently visible 
+    Updates the tickers input field based on the currently visible
     and sorted rows in the data table.
     """
     # virtualRowData is None when the table is first initialized or not sorted/filtered.
     # We fallback to the full data if virtualRowData is not available.
     current_data = virtualRowData if virtualRowData is not None else rowData
-    
+
     if not current_data:
         return ""
-        
-    unique_tickers = ";".join(set(row.get("Ticker", "") for row in current_data if row.get("Ticker")))
+
+    unique_tickers = ";".join(
+        set(row.get("Ticker", "") for row in current_data if row.get("Ticker"))
+    )
     return unique_tickers
 
 
@@ -169,6 +181,7 @@ def update_tickers_input(virtualRowData, rowData):
     Input('tickers-input', 'value')
 )
 def disable_process_button(tickers_val):
+    """Disables the process button if tickers input is empty."""
     if not tickers_val or not tickers_val.strip():
         return True
     return False
@@ -181,11 +194,12 @@ def disable_process_button(tickers_val):
     prevent_initial_call=True
 )
 def run_and_display_batch_mode(n_clicks, tickers_val):
+    """Runs batch mode for the selected tickers and displays results."""
     if not n_clicks or not tickers_val:
         return dash.no_update
 
     # Import locally to avoid circular import issues
-    from app import run_batch_mode
+    from app import run_batch_mode # pylint: disable=import-outside-toplevel
 
     # Call the backend function
     results = run_batch_mode(tickers_val)
