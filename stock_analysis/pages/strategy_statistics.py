@@ -55,31 +55,37 @@ def update_stats_table(min_win_rate):
     data = stats_manager._storage.read()
 
     rows = []
+    min_win_rate_ratio = min_win_rate / 100.0
+
     for entry in data:
-        for ticker, stats in entry.items():
-            date_begin = stats.get('date-begin', 'N/A')
-            date_end = stats.get('date-end', 'N/A')
+        if not entry:
+            continue
 
-            for strategy, metrics in stats.items():
-                if strategy in ['date-begin', 'date-end']:
-                    continue
+        # Each entry is a dict with a single key (the ticker) mapped to its stats
+        ticker, stats = next(iter(entry.items()))
 
-                win_rate_val = metrics.get('Win Rate', 0.0)
+        date_begin = stats.get('date-begin', 'N/A')
+        date_end = stats.get('date-end', 'N/A')
 
-                if (win_rate_val * 100) > min_win_rate:
-                    
-                    avg_return_val = metrics.get('Average Return', 0.0)
-                        
-                    rows.append({
-                        "Ticker": ticker,
-                        "Strategy": strategy,
-                        "Total Return": metrics.get('Total Return', 0.0),
-                        "Average Return": avg_return_val,
-                        "Number of Trades": metrics.get('Number of Trades', 'N/A'),
-                        "Win Rate": win_rate_val,
-                        "Date Begin": date_begin,
-                        "Date End": date_end
-                    })
+        for strategy, metrics in stats.items():
+            # Skip non-strategy metadata keys like 'date-begin' and 'date-end'
+            if type(metrics) is not dict:
+                continue
+
+            win_rate_val = metrics.get('Win Rate', 0.0)
+
+            # Use pre-calculated ratio to avoid multiplying win_rate_val in the loop
+            if win_rate_val > min_win_rate_ratio:
+                rows.append({
+                    "Ticker": ticker,
+                    "Strategy": strategy,
+                    "Total Return": metrics.get('Total Return', 0.0),
+                    "Average Return": metrics.get('Average Return', 0.0),
+                    "Number of Trades": metrics.get('Number of Trades', 'N/A'),
+                    "Win Rate": win_rate_val,
+                    "Date Begin": date_begin,
+                    "Date End": date_end
+                })
 
     if not rows:
         return html.Div([
