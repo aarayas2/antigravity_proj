@@ -2,14 +2,15 @@
 Unit tests for the main application module (app.py).
 """
 
-import pytest
-from unittest.mock import patch
-import datetime
-
 import sys
 import os
+import datetime
+from unittest.mock import patch
+
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+# pylint: disable=wrong-import-position,import-error
 from app import run_batch_mode
 
 class TestApp:
@@ -19,11 +20,11 @@ class TestApp:
     def test_run_batch_mode_no_valid_tickers(self, mock_get_date_ranges):
         """Test batch mode when no valid tickers are provided."""
         result = run_batch_mode("")
-        assert result == {}
+        assert not result
         mock_get_date_ranges.assert_not_called()
 
         result2 = run_batch_mode("   ;  ")
-        assert result2 == {}
+        assert not result2
         mock_get_date_ranges.assert_not_called()
 
     @patch('app.stats_manager')
@@ -63,6 +64,9 @@ class TestApp:
         mock_stats_manager.save_stats_batch.assert_called_once()
         saved_batch = mock_stats_manager.save_stats_batch.call_args[0][0]
         assert len(saved_batch) == 2
+        # Sort saved_batch to ensure consistent order
+        saved_batch = sorted(saved_batch, key=lambda x: x["ticker"])
+        
         assert saved_batch[0]["ticker"] == "AAPL"
         assert saved_batch[0]["date_begin"] == "2023-01-01"
         assert saved_batch[0]["date_end"] == "2023-12-31"
@@ -125,6 +129,7 @@ class TestAppMain:
         """Test that main executes batch mode correctly when args are provided."""
         # This tests that running `main()` with `--ticker AAPL` properly calls into `run_batch_mode`
         # and executes its logic, without mocking `run_batch_mode` itself.
+        # pylint: disable=import-outside-toplevel
         import app
 
         min_date = datetime.datetime(2023, 1, 1)
@@ -149,6 +154,7 @@ class TestAppMain:
     @patch('sys.argv', ['app.py'])
     def test_main_server_mode(self, mock_app_run):
         """Test that main starts the server when no args are provided."""
+        # pylint: disable=import-outside-toplevel
         import app
         app.main()
 
@@ -162,6 +168,7 @@ class TestAppRouting:
     @patch('app.strategy_chart_layout')
     def test_display_page_stats(self, mock_chart_layout, mock_stats_layout):
         """Test routing to the statistics page."""
+        # pylint: disable=import-outside-toplevel
         from app import display_page
 
         mock_stats_layout.return_value = "Stats Layout"
@@ -175,6 +182,7 @@ class TestAppRouting:
     @patch('app.strategy_chart_layout')
     def test_display_page_chart(self, mock_chart_layout, mock_stats_layout):
         """Test routing to the chart page or unknown paths."""
+        # pylint: disable=import-outside-toplevel
         from app import display_page
 
         mock_stats_layout.return_value = "Stats Layout"
