@@ -1,19 +1,29 @@
+"""
+Tests for StockDataCache coverage, including edge cases like path traversal and cache hits.
+"""
+
 import sys
 import os
 import unittest
-from unittest.mock import patch, MagicMock
-import pandas as pd
 import datetime
+from unittest.mock import patch
+
+import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+# pylint: disable=wrong-import-position,import-error
 from utils import StockDataCache
 
 class TestStockDataCacheCoverage(unittest.TestCase):
+    """Test suite for the StockDataCache class."""
+
     def setUp(self):
+        """Set up the test case with a StockDataCache instance."""
         self.cache = StockDataCache(data_dir='test_data')
         self.ticker = "AAPL"
 
     def test_get_file_path_path_traversal(self):
+        """Test that path traversal attempts are blocked."""
         # Trigger path traversal exception by mocking os.path.abspath to return something outside
         # the expected data directory.
         # Since the _get_file_path uses real `os.path.abspath`, it's hard to trigger path traversal
@@ -25,13 +35,17 @@ class TestStockDataCacheCoverage(unittest.TestCase):
                 mock_basename.return_value = '../escaped'
                 mock_re_sub.return_value = '../escaped'
                 with self.assertRaises(ValueError):
+                    # pylint: disable=protected-access
                     self.cache._get_file_path("dummy")
 
     @patch('os.path.exists')
     @patch('utils.pd.read_json')
     @patch.object(pd.DataFrame, 'to_json')
     @patch('utils.StockDataCache._download_from_yf')
-    def test_get_data_cache_hit_all_data_available(self, mock_download, mock_to_json, mock_read_json, mock_exists):
+    def test_get_data_cache_hit_all_data_available(
+        self, mock_download, mock_to_json, mock_read_json, mock_exists
+    ):
+        """Test getting data when all requested data is available in the cache."""
         mock_exists.return_value = True
 
         # Setup cached data covering 2023-01-01 to 2023-01-10
@@ -55,7 +69,11 @@ class TestStockDataCacheCoverage(unittest.TestCase):
     @patch('utils.pd.read_json')
     @patch.object(pd.DataFrame, 'to_json')
     @patch('utils.StockDataCache._download_from_yf')
-    def test_get_data_cache_hit_older_data_needed(self, mock_download, mock_to_json, mock_read_json, mock_exists):
+    def test_get_data_cache_hit_older_data_needed(
+        self, mock_download, mock_to_json, mock_read_json, mock_exists
+    ):
+        # pylint: disable=too-many-locals
+        """Test getting data when older data is needed than what's in the cache."""
         mock_exists.return_value = True
 
         # Setup cached data covering 2023-01-05 to 2023-01-10
@@ -86,7 +104,11 @@ class TestStockDataCacheCoverage(unittest.TestCase):
     @patch('utils.pd.read_json')
     @patch.object(pd.DataFrame, 'to_json')
     @patch('utils.StockDataCache._download_from_yf')
-    def test_get_data_cache_hit_newer_data_needed(self, mock_download, mock_to_json, mock_read_json, mock_exists):
+    def test_get_data_cache_hit_newer_data_needed(
+        self, mock_download, mock_to_json, mock_read_json, mock_exists
+    ):
+        # pylint: disable=too-many-locals
+        """Test getting data when newer data is needed than what's in the cache."""
         mock_exists.return_value = True
 
         # Setup cached data covering 2023-01-01 to 2023-01-05
@@ -116,7 +138,10 @@ class TestStockDataCacheCoverage(unittest.TestCase):
     @patch('os.path.exists')
     @patch('utils.pd.read_json')
     @patch('utils.StockDataCache._download_and_save_full')
-    def test_get_data_cache_hit_empty_cache(self, mock_download_full, mock_read_json, mock_exists):
+    def test_get_data_cache_hit_empty_cache(
+        self, mock_download_full, mock_read_json, mock_exists
+    ):
+        """Test getting data when the cache file exists but is empty."""
         mock_exists.return_value = True
 
         # Cache file exists but is empty
@@ -137,7 +162,10 @@ class TestStockDataCacheCoverage(unittest.TestCase):
     @patch('os.path.exists')
     @patch('utils.pd.read_json')
     @patch('utils.StockDataCache._download_and_save_full')
-    def test_get_data_cache_exception_handling(self, mock_download_full, mock_read_json, mock_exists):
+    def test_get_data_cache_exception_handling(
+        self, mock_download_full, mock_read_json, mock_exists
+    ):
+        """Test exception handling during cache reading falls back to full download."""
         mock_exists.return_value = True
 
         # Raise exception during read
