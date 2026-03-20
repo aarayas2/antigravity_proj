@@ -7,7 +7,7 @@ import sys
 
 # Add parent directory to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
-from utils import StockDataCache  # pylint: disable=import-error
+from utils import StockDataCache  # pylint: disable=import-error,wrong-import-position
 
 def test_ticker_sanitization():
     """Test that tickers are properly sanitized to prevent path traversal."""
