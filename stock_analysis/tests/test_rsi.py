@@ -3,7 +3,7 @@ import os
 import sys
 from unittest.mock import MagicMock, patch
 
-import pytest
+import pytest  # pylint: disable=import-error
 import numpy as np
 import pandas as pd
 

@@ -5,7 +5,7 @@ import sys
 from unittest.mock import MagicMock, patch
 import pandas as pd
 import numpy as np
-import pytest
+import pytest  # pylint: disable=import-error
 
 # Add the project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
