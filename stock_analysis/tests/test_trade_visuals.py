@@ -1,21 +1,30 @@
-import sys
+"""
+Tests for trade visualizations and tooltips.
+"""
 import os
+import sys
+import unittest
+from datetime import datetime
+from unittest.mock import Mock
+
+import pandas as pd
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import unittest
-from unittest.mock import Mock
-import pandas as pd
-from datetime import datetime
-
+# pylint: disable=wrong-import-position,import-error
 from trade_visuals import TradeTooltipFactory
 
 class TestTradeTooltipFactory(unittest.TestCase):
+    # pylint: disable=too-many-public-methods
+    """Test suite for the TradeTooltipFactory class."""
     def setUp(self):
+        """Set up the test case with a factory and standard dates."""
         self.factory = TradeTooltipFactory(y_min=0.0, y_max=100.0)
         self.dt_entry = datetime(2023, 1, 1)
         self.dt_exit = datetime(2023, 1, 10)
 
     def test_valid_trade(self):
+        """Test creating a tooltip for a completely valid trade."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': self.dt_exit,
@@ -28,6 +37,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertEqual(trace.fillcolor, "rgba(0, 128, 0, 0.2)") # profit > 0
 
     def test_missing_entry_date(self):
+        """Test handling of a trade missing the entry date."""
         trade = {
             'exit_date': self.dt_exit,
             'entry_price': 100.0,
@@ -38,6 +48,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIsNone(trace)
 
     def test_missing_exit_date_open_trade(self):
+        """Test handling of a trade missing the exit date without fallback."""
         trade = {
             'entry_date': self.dt_entry,
             'entry_price': 100.0,
@@ -47,6 +58,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIsNone(trace) # As per logic, without fallback, it returns None for open trades
 
     def test_zero_entry_price(self):
+        """Test formatting when entry price is strictly zero."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': self.dt_exit,
@@ -59,6 +71,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("N/A (Entry=0)", trace.text)
 
     def test_missing_prices(self):
+        """Test formatting when prices are missing."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': self.dt_exit,
@@ -70,6 +83,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("Exit Price: N/A", trace.text)
 
     def test_negative_profit(self):
+        """Test color mapping for a trade with negative profit."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': self.dt_exit,
@@ -82,13 +96,15 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertEqual(trace.fillcolor, "rgba(255, 0, 0, 0.2)")
 
     def test_exception_handling_malformed_trade(self):
+        """Test exception handling for a completely malformed trade dictionary."""
         trade = ["not", "a", "dict"] # Will cause AttributeError when get() is called
         trace = self.factory.create_trace(trade)
         self.assertIsNone(trace)
 
     def test_entry_date_exception(self):
+        """Test exception fallback when entry date formatting fails."""
         mock_date = Mock()
-        mock_date.strftime.side_effect = Exception("Date formatting error")
+        mock_date.strftime.side_effect = ValueError("Date formatting error")
 
         trade = {
             'entry_date': mock_date,
@@ -102,8 +118,9 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("Start: Unknown", trace.text)
 
     def test_exit_date_exception(self):
+        """Test exception fallback when exit date formatting fails."""
         mock_date = Mock()
-        mock_date.strftime.side_effect = Exception("Date formatting error")
+        mock_date.strftime.side_effect = ValueError("Date formatting error")
 
         trade = {
             'entry_date': self.dt_entry,
@@ -117,6 +134,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("End: Unknown", trace.text)
 
     def test_open_trade_with_fallback_date(self):
+        """Test formatting and coloring of an open trade with a fallback date."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': None,
@@ -142,6 +160,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIsNone(trace)
 
     def test_open_trade_pd_isna_exit_date_valid_fallback(self):
+        """Test open trade logic when exit_date is pd.NaT but fallback is valid."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': pd.NaT,
@@ -155,6 +174,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("End: Open", trace.text)
 
     def test_open_trade_pd_isna_exit_date_invalid_fallback(self):
+        """Test open trade logic when exit_date is pd.NaT and fallback is also invalid."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': pd.NaT,
@@ -167,6 +187,8 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIsNone(trace)
 
     def test_pd_isna_prices(self):
+        """Test fallback formatting for NaN prices."""
+        # pylint: disable=import-outside-toplevel
         import numpy as np
         trade = {
             'entry_date': self.dt_entry,
@@ -181,6 +203,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("Exit Price: N/A", trace.text)
 
     def test_string_dates_no_strftime(self):
+        """Test date fallback when strings are passed instead of datetime objects."""
         trade = {
             'entry_date': '2023-01-01',
             'exit_date': '2023-01-10',
@@ -194,6 +217,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("End: 2023-01-10", trace.text)
 
     def test_missing_profit_key(self):
+        """Test fallback for missing profit key."""
         trade = {
             'entry_date': self.dt_entry,
             'exit_date': self.dt_exit,
@@ -207,6 +231,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertEqual(trace.hoverlabel.bgcolor, "red")
 
     def test_pd_nat_entry_date(self):
+        """Test rejection when entry_date is pd.NaT."""
         trade = {
             'entry_date': pd.NaT,
             'exit_date': self.dt_exit,
@@ -218,6 +243,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIsNone(trace)
 
     def test_missing_keys_edge_cases(self):
+        """Test a variety of missing key edge cases."""
         # Trade missing both entry_date and exit_date
         trace1 = self.factory.create_trace({'profit': 10.0})
         self.assertIsNone(trace1)
@@ -227,7 +253,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIsNone(trace2)
 
     def test_missing_random_keys(self):
-        """Test with a dictionary that has completely unrelated keys but misses the required ones."""
+        """Test with a dictionary having unrelated keys but missing required ones."""
         trace = self.factory.create_trace({'random_key': 'value', 'another_key': 123})
         self.assertIsNone(trace)
 
@@ -258,7 +284,7 @@ class TestTradeTooltipFactory(unittest.TestCase):
         self.assertIn("Exit Price: N/A", trace.text)
 
     def test_missing_essential_keys_combinations(self):
-        """Test explicitly missing essential keys like entry_date to ensure None is returned."""
+        """Test explicitly missing essential keys like entry_date."""
         # 1. Missing entry_date
         trade1 = {
             'exit_date': self.dt_exit,
@@ -324,12 +350,14 @@ class TestTradeTooltipFactory(unittest.TestCase):
         del trade_no_entry_date['entry_date']
         self.assertIsNone(self.factory.create_trace(trade_no_entry_date))
 
-        # Missing only exit_date (and no fallback) - Should return None because it's an open trade without a fallback
+        # Missing only exit_date (and no fallback)
+        # - Should return None because it's an open trade without a fallback
         trade_no_exit_date = valid_trade.copy()
         del trade_no_exit_date['exit_date']
         self.assertIsNone(self.factory.create_trace(trade_no_exit_date))
 
-        # Missing exit_date but has fallback_exit_date - Should handle it as an open trade
+        # Missing exit_date but has fallback_exit_date
+        # - Should handle it as an open trade
         trade_no_exit_date_with_fallback = valid_trade.copy()
         del trade_no_exit_date_with_fallback['exit_date']
         trade_no_exit_date_with_fallback['fallback_exit_date'] = self.dt_exit
@@ -364,7 +392,9 @@ class TestTradeTooltipFactory(unittest.TestCase):
     def test_missing_keys_return_none_cases(self):
         """Test completely missing keys that result in None trace."""
         self.assertIsNone(self.factory.create_trace({'exit_date': self.dt_exit}))
-        self.assertIsNone(self.factory.create_trace({'entry_price': 100.0, 'exit_price': 110.0}))
+        self.assertIsNone(self.factory.create_trace(
+            {'entry_price': 100.0, 'exit_price': 110.0}
+        ))
         self.assertIsNone(self.factory.create_trace({'fallback_exit_date': self.dt_exit}))
         self.assertIsNone(self.factory.create_trace({}))
 
@@ -397,6 +427,7 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
 
     def test_np_nan_handling(self):
         """Test np.nan for prices explicitly."""
+        # pylint: disable=import-outside-toplevel
         import numpy as np
         trade_nan_prices = {
             'entry_date': datetime(2023, 1, 1),
@@ -411,6 +442,7 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
 
     def test_plotly_shape_generation_exception(self):
         """Test exception handling during go.Scatter generation by providing invalid data."""
+        # pylint: disable=import-outside-toplevel
         from unittest.mock import patch
 
         trade = {
@@ -421,34 +453,19 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
             'profit': 10.0
         }
 
-        # By mocking go.Scatter to raise an Exception, we can cover the `except Exception as e:` block.
-        with patch('trade_visuals.go.Scatter', side_effect=ValueError("Intentional error for testing Exception handling in Plotly trace generation")):
+        # By mocking go.Scatter to raise an Exception, we can cover the exception block.
+        with patch(
+            'trade_visuals.go.Scatter',
+            side_effect=ValueError(
+                "Intentional error for testing Exception handling in Plotly trace generation"
+            )
+        ):
             trace = self.factory.create_trace(trade)
             self.assertIsNone(trace)
 
     def test_malformed_date_strings_exception(self):
         """Test passing malformed dates to trigger formatting exceptions."""
-        class MalformedDate:
-            def strftime(self, format):
-                raise ValueError("Intentional formatting error")
-
-            def __str__(self):
-                raise ValueError("Intentional string cast error")
-
-            # Make it behave nicely for the initial pandas check `pd.isna`
-            def __bool__(self):
-                return True
-
-        # Plotly go.Scatter doesn't like generic objects for x coordinates and might raise an error
-        # during trace instantiation, hiding the `str()` exception test.
-        # We can either patch `go.Scatter` so it accepts anything or use `mock_date` logic
-        # from earlier tests, but mock `__str__` to raise exception when `hasattr` is false.
-
-        # Actually, let's use a mock that doesn't have `strftime` and raises an error on `__str__`.
-        # MagicMock.__str__ handles things safely, so we need to set side_effect on a regular mock
-        # or class. We can patch `go.Scatter` just to get the `hover_text` generated without error
-        # and test it.
-
+        # pylint: disable=import-outside-toplevel
         from unittest.mock import patch
 
         # When TradeTooltipFactory.create_trace tries to format the dates, it should
@@ -457,10 +474,10 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
         # Test 1: Exception during `strftime` (covered by `test_entry_date_exception` in main suite)
         # Test 2: Exception during `str()` cast when `strftime` is not present
 
-
         class NoStrftimeDate:
+            """Mock date that lacks strftime and raises error on string conversion."""
             def __str__(self):
-                raise Exception("Intentional string cast error")
+                raise ValueError("Intentional string cast error")
             def __bool__(self):
                 return True
 
@@ -485,18 +502,23 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
     def test_plotly_shape_generation_native_exception(self):
         """Test native exception handling when trace generation natively fails."""
         class MalformedDateStrftime:
+            """Mock date that raises an error on strftime."""
+            # pylint: disable=redefined-builtin
             def strftime(self, format):
+                """Raise error during formatting."""
                 raise ValueError("Triggering exception on strftime conversion")
             def __bool__(self):
                 return True
             def __str__(self):
-                # When hasattr(..., 'strftime') returns True, strftime is called and raises ValueError.
-                # Then it goes to except Exception and start_str becomes "Unknown"
+                # When hasattr(..., 'strftime') returns True, strftime is called
+                # and raises ValueError. Then it goes to except Exception and
+                # start_str becomes "Unknown"
                 return "2023-01-01"
 
         class MalformedDateStr:
+            """Mock date that raises an error on string conversion."""
             def __str__(self):
-                raise Exception("Triggering exception on string conversion")
+                raise ValueError("Triggering exception on string conversion")
             def __bool__(self):
                 return True
 
@@ -516,41 +538,6 @@ class TestTradeTooltipFactoryAdditionalEdgeCases(unittest.TestCase):
         self.assertIn("Start: Unknown", trace.text)
         self.assertIn("End: Unknown", trace.text)
 
-
-if __name__ == '__main__':
-    unittest.main()
-
-    def test_plotly_shape_generation_native_exception(self):
-        """Test native exception handling when trace generation natively fails."""
-        class MalformedDateStrftime:
-            def strftime(self, format):
-                raise ValueError("Triggering exception on strftime conversion")
-            def __bool__(self):
-                return True
-            def __str__(self):
-                return "2023-01-01"
-
-        class MalformedDateStr:
-            def __str__(self):
-                raise Exception("Triggering exception on string conversion")
-            def __bool__(self):
-                return True
-
-        # Using mocked objects to trigger the formatting ValueError/Exception for both
-        trade = {
-            'entry_date': MalformedDateStrftime(),
-            'exit_date': MalformedDateStr(),
-            'entry_price': 100.0,
-            'exit_price': 110.0,
-            'profit': 10.0
-        }
-
-        # Do NOT patch go.Scatter. Let the exception bubble up inside the date formatting blocks.
-        # This will explicitly cover lines 108-117.
-        trace = self.factory.create_trace(trade)
-        self.assertIsNotNone(trace)
-        self.assertIn("Start: Unknown", trace.text)
-        self.assertIn("End: Unknown", trace.text)
 
 if __name__ == '__main__':
     unittest.main()

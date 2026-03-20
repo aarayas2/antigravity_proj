@@ -1,12 +1,18 @@
-import pytest
+"""
+Tests for the strategy chart page logic.
+"""
 import datetime
-import pandas as pd
 from unittest.mock import patch, MagicMock
+
+import pandas as pd
+# pylint: disable=import-error
+import pytest
 
 from pages.strategy_chart import run_analysis_for_ticker
 
 @pytest.fixture
 def sample_metrics():
+    """Provides a sample metrics dictionary for testing."""
     return {
         "Total Return": 0.105,
         "Average Return": 0.012,
@@ -16,6 +22,7 @@ def sample_metrics():
 
 @pytest.fixture
 def sample_df():
+    """Provides a sample DataFrame for testing."""
     df = pd.DataFrame({
         'Close': [100, 101, 102],
         'Signal': [0.0, 0.0, 1.0]
@@ -23,6 +30,7 @@ def sample_df():
     return df
 
 def test_run_analysis_load_data_none():
+    """Tests run_analysis_for_ticker when no data is loaded."""
     start_date = datetime.date(2023, 1, 1)
     end_date = datetime.date(2023, 12, 31)
 
@@ -31,6 +39,7 @@ def test_run_analysis_load_data_none():
         assert result is None
 
 def test_run_analysis_load_data_empty():
+    """Tests run_analysis_for_ticker when loaded data is empty."""
     start_date = datetime.date(2023, 1, 1)
     end_date = datetime.date(2023, 12, 31)
 
@@ -43,7 +52,12 @@ def test_run_analysis_load_data_empty():
 @patch('pages.strategy_chart.apply_strategy')
 @patch('pages.strategy_chart.calculate_metrics')
 @patch('pages.strategy_chart.create_strategy_chart')
-def test_run_analysis_batch_mode(mock_create_chart, mock_calc_metrics, mock_apply_strategy, mock_load_data, sample_df, sample_metrics):
+def test_run_analysis_batch_mode(
+    mock_create_chart, mock_calc_metrics, mock_apply_strategy,
+    mock_load_data, sample_df, sample_metrics
+):
+    # pylint: disable=too-many-arguments,redefined-outer-name,too-many-positional-arguments
+    """Tests run_analysis_for_ticker in batch mode."""
     mock_load_data.return_value = sample_df
     mock_apply_strategy.return_value = sample_df
     mock_calc_metrics.return_value = sample_metrics
@@ -72,7 +86,12 @@ def test_run_analysis_batch_mode(mock_create_chart, mock_calc_metrics, mock_appl
 @patch('pages.strategy_chart.apply_strategy')
 @patch('pages.strategy_chart.calculate_metrics')
 @patch('pages.strategy_chart.create_strategy_chart')
-def test_run_analysis_interactive_mode(mock_create_chart, mock_calc_metrics, mock_apply_strategy, mock_load_data, sample_df, sample_metrics):
+def test_run_analysis_interactive_mode(
+    mock_create_chart, mock_calc_metrics, mock_apply_strategy,
+    mock_load_data, sample_df, sample_metrics
+):
+    # pylint: disable=too-many-arguments,redefined-outer-name,too-many-positional-arguments
+    """Tests run_analysis_for_ticker in interactive mode."""
     mock_load_data.return_value = sample_df
     mock_apply_strategy.return_value = sample_df
     mock_calc_metrics.return_value = sample_metrics
@@ -94,5 +113,6 @@ def test_run_analysis_interactive_mode(mock_create_chart, mock_calc_metrics, moc
     # Check that create_strategy_chart was called
     mock_create_chart.assert_called_once()
 
-    # In interactive mode, buy signals are not tracked in the same way (or rather, is_batch_mode check prevents it)
+    # In interactive mode, buy signals are not tracked in the same way
+    # (or rather, is_batch_mode check prevents it)
     assert result["buy_signals"] == []
