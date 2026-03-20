@@ -66,7 +66,7 @@ class TestApp:
         assert len(saved_batch) == 2
         # Sort saved_batch to ensure consistent order
         saved_batch = sorted(saved_batch, key=lambda x: x["ticker"])
-        
+
         assert saved_batch[0]["ticker"] == "AAPL"
         assert saved_batch[0]["date_begin"] == "2023-01-01"
         assert saved_batch[0]["date_end"] == "2023-12-31"
