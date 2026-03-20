@@ -3,7 +3,6 @@ import sys
 import pandas as pd
 import numpy as np
 import pandas_ta as ta
-import pytest
 from unittest.mock import MagicMock
 
 # Add the project root to sys.path
