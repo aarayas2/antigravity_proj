@@ -7,7 +7,7 @@ from unittest.mock import patch, MagicMock
 import pandas as pd
 import datetime
 
-from utils import calculate_metrics, load_data, _compile_performance_metrics
+from utils import calculate_metrics, _compile_performance_metrics
 
 class TestLoadData(unittest.TestCase):
     @patch('utils._cache.get_data')
@@ -56,7 +56,6 @@ class TestLoadData(unittest.TestCase):
     @patch('os.path.exists')
     def test_load_data_fetches_and_caches(self, mock_exists, mock_makedirs, mock_download):
         from utils import StockDataCache, load_data
-        import utils
 
         # Simulate cache miss by mocking os.path.exists
         mock_exists.return_value = False
