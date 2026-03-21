@@ -121,5 +121,56 @@ class TestConvertData(unittest.TestCase):
                     mock_print.assert_called_with("Stats file not found at custom_stats.json")
 
 
+    @patch('os.path.exists')
+    def test_migrate_integration_with_mock_open(self, mock_exists):
+        """Test the full migrate function using mock_open with raw JSON strings."""
+        import json
+        mock_exists.return_value = True
+        
+        input_json = json.dumps([
+            {
+                "AAPL": {
+                    "date-begin": "2023-01-01",
+                    "date-end": "2023-12-31",
+                    "SMA": {
+                        "Total Return": "15.5%",
+                        "Average Return": "1.2%",
+                        "Win Rate": "60.0%",
+                        "Other Metric": "Value"
+                    },
+                    "RSI": {
+                        "Total Return": 0.1234,
+                        "Average Return": "invalid",
+                        "Win Rate": "50%"
+                    }
+                }
+            }
+        ])
+        
+        m = mock_open(read_data=input_json)
+        with patch('builtins.open', m):
+            migrate('stats.json')
+            
+        # Get all write calls
+        handle = m()
+        write_calls = handle.write.call_args_list
+        written_content = "".join(call[0][0] for call in write_calls)
+        
+        # Parse the output
+        output_data = json.loads(written_content)
+        
+        # Verify
+        aapl = output_data[0]["AAPL"]
+        self.assertEqual(aapl["SMA"]["Total Return"], 0.155)
+        self.assertEqual(aapl["SMA"]["Average Return"], 0.012)
+        self.assertEqual(aapl["SMA"]["Win Rate"], 0.6)
+        self.assertEqual(aapl["SMA"]["Other Metric"], "Value")
+        
+        self.assertEqual(aapl["RSI"]["Total Return"], 0.1234)
+        self.assertEqual(aapl["RSI"]["Average Return"], 0.0)
+        self.assertEqual(aapl["RSI"]["Win Rate"], 0.5)
+        
+        self.assertEqual(aapl["date-begin"], "2023-01-01")
+
 if __name__ == '__main__':
     unittest.main()
