@@ -16,6 +16,18 @@ from app import run_batch_mode
 class TestApp:
     """Tests for the core application logic like batch mode."""
 
+    def setup_method(self):
+        # Patch ProcessPoolExecutor to use ThreadPoolExecutor so that MagicMock objects
+        # can be passed as functions without pickle errors during tests.
+        self.executor_patcher = patch(
+            'app.concurrent.futures.ProcessPoolExecutor',
+            new=__import__('concurrent.futures').futures.ThreadPoolExecutor
+        )
+        self.executor_patcher.start()
+
+    def teardown_method(self):
+        self.executor_patcher.stop()
+
     @patch('app.get_date_ranges')
     def test_run_batch_mode_no_valid_tickers(self, mock_get_date_ranges):
         """Test batch mode when no valid tickers are provided."""
@@ -118,6 +130,16 @@ class TestApp:
 class TestAppMain:
     """Tests for the main application entry point."""
 
+    def setup_method(self):
+        self.executor_patcher = patch(
+            'app.concurrent.futures.ProcessPoolExecutor',
+            new=__import__('concurrent.futures').futures.ThreadPoolExecutor
+        )
+        self.executor_patcher.start()
+
+    def teardown_method(self):
+        self.executor_patcher.stop()
+
     @patch('app.get_date_ranges')
     @patch('app.run_analysis_for_ticker')
     @patch('app.stats_manager')
@@ -163,6 +185,16 @@ class TestAppMain:
 
 class TestAppRouting:
     """Tests for Dash routing logic."""
+
+    def setup_method(self):
+        self.executor_patcher = patch(
+            'app.concurrent.futures.ProcessPoolExecutor',
+            new=__import__('concurrent.futures').futures.ThreadPoolExecutor
+        )
+        self.executor_patcher.start()
+
+    def teardown_method(self):
+        self.executor_patcher.stop()
 
     @patch('app.strategy_statistics_layout')
     @patch('app.strategy_chart_layout')
