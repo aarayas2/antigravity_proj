@@ -1,7 +1,7 @@
 """
 Unit tests for persistence.py.
 """
-# pylint: disable=too-few-public-methods,line-too-long,import-error,useless-parent-delegation,protected-access,unused-variable,unnecessary-pass
+# pylint: disable=too-few-public-methods,line-too-long,import-error,useless-parent-delegation,protected-access,unused-variable,unnecessary-pass,too-many-lines
 import json
 import os
 import sys
@@ -96,6 +96,15 @@ def test_write_exception_when_temp_file_doesnt_exist_anymore(tmp_path):
          patch("os.path.exists", side_effect=lambda p: not p.endswith('.tmp')):
         with pytest.raises(OSError):
             storage.write(data)
+
+def test_stats_manager_init_without_strategy_raises_error():
+    """Test StatsManager init without strategy raises error."""
+    # Reset singleton instance to test first initialization
+    StatsManager._instance = None  # pylint: disable=protected-access
+
+    with pytest.raises(ValueError, match="A storage strategy must be provided for the first initialization."):
+        StatsManager()
+
 
 def test_stats_manager_singleton():
     """Test stats manager singleton."""
