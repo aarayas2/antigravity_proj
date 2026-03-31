@@ -22,6 +22,34 @@ from pages.strategy_statistics import (
 
 class TestStrategyStatistics(unittest.TestCase):
     """Test suite for strategy statistics logic."""
+    @patch('pages.strategy_statistics.stats_manager.read_all_stats')
+    def test_update_stats_table_ignores_non_dict_metrics(self, mock_read_all):
+        """Tests that update_stats_table ignores non-dict keys within stats."""
+        # Provide mock data with string/invalid keys inside the strategy dictionary
+        mock_read_all.return_value = [
+            {'TICKER_X': {
+                'date-begin': '2023-01-01',
+                'date-end': '2023-12-31',
+                'invalid_string_key': 'this should be ignored',
+                'invalid_list_key': [1, 2, 3],
+                'ValidStrategy': {
+                    'Win Rate': 0.8,
+                    'Average Return': 0.05,
+                    'Total Return': 0.1,
+                    'Number of Trades': 10
+                }
+            }}
+        ]
+
+        table = update_stats_table(0)
+        row_data = getattr(table, 'rowData', [])
+        
+        # Only ValidStrategy should be processed
+        self.assertEqual(len(row_data), 1)
+        self.assertEqual(row_data[0]['Strategy'], 'ValidStrategy')
+        self.assertEqual(row_data[0]['Ticker'], 'TICKER_X')
+        self.assertEqual(row_data[0]['Win Rate'], 0.8)
+
     @patch('pages.strategy_statistics.stats_manager._storage.read')
     def test_unique_tickers_maintains_order(self, mock_read):
         """Tests that unique tickers maintain their insertion order."""
