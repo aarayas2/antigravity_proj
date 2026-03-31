@@ -3,6 +3,7 @@ Strategy Chart Page
 Provides the layout and callbacks for analyzing and charting various trading strategies.
 """
 import datetime
+import os
 import concurrent.futures
 from urllib.parse import parse_qs
 
@@ -140,7 +141,7 @@ def layout():
                     autocomplete="off",
                     debounce=False # Allow 'n_submit' to work smoothly
                 )
-            ], md=4),
+            ], md=3),
 
             dbc.Col([
                 dbc.Label(id="date-range-label", children="Date Range"),
@@ -164,14 +165,23 @@ def layout():
 
             dbc.Col([
                 dbc.Label("\u00A0"), # Non-breaking space for alignment
-                dbc.Button(
-                    "Compute Analysis",
-                    id="compute-btn",
-                    color="primary",
-                    className="w-100",
-                    n_clicks=0
-                )
-            ], md=2)
+                html.Div([
+                    dbc.Button(
+                        "Compute Analysis",
+                        id="compute-btn",
+                        color="primary",
+                        className="w-100 me-2",
+                        n_clicks=0
+                    ),
+                    dbc.Button(
+                        "Refresh",
+                        id="refresh-btn",
+                        color="secondary",
+                        className="w-100",
+                        n_clicks=0
+                    )
+                ], className="d-flex")
+            ], md=3)
         ], className="mb-4 align-items-end"),
 
         dbc.Spinner(
@@ -207,12 +217,13 @@ def update_datalist(mru_data):
     Output("output-container", "children"),
     Output("mru-store", "data"),
     Input("compute-btn", "n_clicks"),
+    Input("refresh-btn", "n_clicks"),
     Input("ticker-input", "n_submit"),
     State("ticker-input", "value"),
     State("date-range-slider", "value"),
     State("mru-store", "data")
 )
-def update_analysis(n_clicks, n_submit, ticker, date_range, mru_data): # pylint: disable=unused-argument
+def update_analysis(n_clicks, refresh_clicks, n_submit, ticker, date_range, mru_data): # pylint: disable=unused-argument
     """
     Handles computation of analysis and returns updated UI components and MRU list.
     """
@@ -220,6 +231,22 @@ def update_analysis(n_clicks, n_submit, ticker, date_range, mru_data): # pylint:
         return html.Div("Please provide ticker and date range."), dash.no_update
 
     ticker = ticker.upper()
+
+    ctx = dash.callback_context
+    trigger = ctx.triggered[0]['prop_id'] if ctx.triggered else None
+
+    if trigger == 'refresh-btn.n_clicks':
+        # Remove cached file for the current ticker to force full refresh
+        pages_file = os.path.join(os.path.dirname(__file__), f"{ticker}.json")
+        data_file = os.path.join(os.path.dirname(__file__), "..", "data", f"{ticker}.json")
+
+        for file_path in [pages_file, data_file]:
+            if os.path.exists(file_path):
+                try:
+                    os.remove(file_path)
+                except Exception as e: # pylint: disable=broad-exception-caught
+                    print(f"Failed to remove cache file {file_path}: {e}")
+
     start_date_obj = datetime.date.fromordinal(date_range[0])
     end_date_obj = datetime.date.fromordinal(date_range[1])
 
