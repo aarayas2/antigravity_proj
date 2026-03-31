@@ -223,7 +223,7 @@ def update_datalist(mru_data):
     State("date-range-slider", "value"),
     State("mru-store", "data")
 )
-def update_analysis(n_clicks, refresh_clicks, n_submit, ticker, date_range, mru_data): # pylint: disable=unused-argument
+def update_analysis(n_clicks, refresh_clicks, n_submit, ticker, date_range, mru_data): # pylint: disable=unused-argument,too-many-arguments,too-many-positional-arguments,too-many-locals
     """
     Handles computation of analysis and returns updated UI components and MRU list.
     """
