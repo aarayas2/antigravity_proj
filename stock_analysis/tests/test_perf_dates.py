@@ -6,12 +6,17 @@ import io
 import os
 import sys
 import time
+from concurrent.futures import ThreadPoolExecutor
 from unittest.mock import patch
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 import app  # pylint: disable=wrong-import-position,import-error
 
 # Mock to bypass actual downloading
+@patch(
+    'app.concurrent.futures.ProcessPoolExecutor',
+    new=ThreadPoolExecutor
+)
 @patch('app.run_analysis_for_ticker')
 @patch('app.stats_manager.save_stats_batch')
 def test_perf(mock_save_batch, mock_run):  # pylint: disable=unused-argument
