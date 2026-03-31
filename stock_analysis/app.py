@@ -8,7 +8,8 @@ import concurrent.futures
 import os
 import sys
 
-from dash import Dash, dcc, html, Input, Output, callback  # pylint: disable=import-error
+import dash  # pylint: disable=import-error
+from dash import dcc, html, Input, Output, callback  # pylint: disable=import-error
 import dash_bootstrap_components as dbc  # pylint: disable=import-error
 
 # Ensure pages directory and current directory are in path
@@ -23,7 +24,7 @@ from pages.strategy_statistics import layout as strategy_statistics_layout  # py
 
 
 # Dash App Initialization
-app = Dash(
+app = dash.Dash(
     __name__,
     external_stylesheets=[dbc.themes.DARKLY],
     suppress_callback_exceptions=True
