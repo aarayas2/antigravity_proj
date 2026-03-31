@@ -61,26 +61,25 @@ def run_batch_mode(tickers_str: str):  # pylint: disable=too-many-locals
     date_begin_str = start_date_obj.strftime('%Y-%m-%d')
     date_end_str = end_date_obj.strftime('%Y-%m-%d')
 
-    def process_ticker(ticker):
-        print(f"[{ticker}] Starting analysis...")
-        result = run_analysis_for_ticker(ticker, start_date_obj, end_date_obj, is_batch_mode=True)
-        if result is None:
-            print(f"[{ticker}] Failed to load data.")
-            return ticker, None
-        print(f"[{ticker}] Analysis complete.")
-        return ticker, result
-
     # ⚡ Performance Optimization:
-    # Use a ThreadPoolExecutor to run analysis concurrently rather than sequentially.
-    # This massively speeds up the batch process, especially over I/O bounds like data fetching.
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(len(tickers), 10)) as executor:
-        future_to_ticker = {executor.submit(process_ticker, ticker): ticker for ticker in tickers}
+    # Use a ProcessPoolExecutor to run analysis concurrently rather than sequentially.
+    # This massively speeds up the batch process by bypassing the GIL for CPU-bound Pandas operations.
+    with concurrent.futures.ProcessPoolExecutor(max_workers=min(len(tickers), 10)) as executor:
+        # We must use the top-level function directly or a partial, because ProcessPoolExecutor
+        # requires picklable functions (nested functions are not picklable).
+        future_to_ticker = {
+            executor.submit(
+                run_analysis_for_ticker, ticker, start_date_obj, end_date_obj, is_batch_mode=True
+            ): ticker for ticker in tickers
+        }
         for future in concurrent.futures.as_completed(future_to_ticker):
             ticker = future_to_ticker[future]
             try:
-                _, result = future.result()
+                result = future.result()
                 if result is None:
+                    print(f"[{ticker}] Failed to load data.")
                     continue
+                print(f"[{ticker}] Analysis complete.")
 
                 # Collect stats for batch save
                 batch_stats.append({
