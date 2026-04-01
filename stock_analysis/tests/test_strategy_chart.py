@@ -8,7 +8,8 @@ import pandas as pd
 # pylint: disable=import-error
 import pytest
 
-from pages.strategy_chart import run_analysis_for_ticker
+import dash
+from pages.strategy_chart import run_analysis_for_ticker, sync_ticker
 
 @pytest.fixture
 def sample_metrics():
@@ -116,3 +117,46 @@ def test_run_analysis_interactive_mode(
     # In interactive mode, buy signals are not tracked in the same way
     # (or rather, is_batch_mode check prevents it)
     assert result["buy_signals"] == []
+
+
+def test_sync_ticker_initial_load_no_url_ticker_default_aapl():
+    """Tests sync_ticker on initial load when url_ticker is None and ticker is AAPL."""
+    search = ""
+    ticker = "AAPL"
+    is_initial_load = True
+    n_clicks = 0
+
+    with patch('dash.callback_context') as mock_ctx:
+        mock_ctx.triggered = []
+        result = sync_ticker(search, ticker, is_initial_load, n_clicks)
+
+    # Should return dash.no_update, dash.no_update, False, n_clicks + 1
+    assert result == (dash.no_update, dash.no_update, False, 1)
+
+def test_sync_ticker_initial_load_no_url_ticker_other_ticker():
+    """Tests sync_ticker on initial load when url_ticker is None and ticker is not AAPL."""
+    search = ""
+    ticker = "MSFT"
+    is_initial_load = True
+    n_clicks = 0
+
+    with patch('dash.callback_context') as mock_ctx:
+        mock_ctx.triggered = []
+        result = sync_ticker(search, ticker, is_initial_load, n_clicks)
+
+    # Should return dash.no_update, f"?ticker={ticker}", False, n_clicks + 1
+    assert result == (dash.no_update, "?ticker=MSFT", False, 1)
+
+def test_sync_ticker_initial_load_with_url_ticker():
+    """Tests sync_ticker on initial load when url_ticker is present."""
+    search = "?ticker=TSLA"
+    ticker = "AAPL"
+    is_initial_load = True
+    n_clicks = 0
+
+    with patch('dash.callback_context') as mock_ctx:
+        mock_ctx.triggered = []
+        result = sync_ticker(search, ticker, is_initial_load, n_clicks)
+
+    # Should return url_ticker.upper(), dash.no_update, False, n_clicks + 1
+    assert result == ("TSLA", dash.no_update, False, 1)
