@@ -173,12 +173,21 @@ def layout():
                         className="w-100 me-2",
                         n_clicks=0
                     ),
-                    dbc.Button(
-                        "Refresh",
-                        id="refresh-btn",
-                        color="secondary",
-                        className="w-100",
-                        n_clicks=0
+                    html.Div(
+                        [
+                            dbc.Button(
+                                html.I(className="bi bi-arrow-clockwise"),
+                                id="refresh-btn",
+                                color="secondary",
+                                className="w-100",
+                                n_clicks=0
+                            ),
+                            dbc.Tooltip(
+                                "Refresh",
+                                target="refresh-btn",
+                                placement="top",
+                            )
+                        ]
                     )
                 ], className="d-flex")
             ], md=3)
