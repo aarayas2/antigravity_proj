@@ -21,7 +21,7 @@ def layout():
                     min=0,
                     max=100,
                     step=5,
-                    value=50,
+                    value=75,
                     marks={i: f'{i}%' for i in range(0, 101, 10)}
                 )
             ], md=6),
