@@ -351,7 +351,7 @@ def get_date_ranges():
     """Returns a dictionary with common date ranges and configurations."""
     max_date = datetime.date.today()
     min_date = max_date - datetime.timedelta(days=365 * 5)
-    default_start = max_date - datetime.timedelta(days=365)
+    default_start = max_date - datetime.timedelta(days=365 * 5)
 
     return {
         "max_date": max_date,
