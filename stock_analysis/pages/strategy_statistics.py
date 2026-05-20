@@ -80,7 +80,7 @@ def update_stats_table(min_win_rate):  # pylint: disable=too-many-locals
             win_rate_val = metrics.get('Win Rate', 0.0)
 
             # Use pre-calculated ratio to avoid multiplying win_rate_val in the loop
-            if win_rate_val > min_win_rate_ratio:
+            if win_rate_val > min_win_rate_ratio or strategy == "52-Week Low Buy Zone":
                 rows.append({
                     "Ticker": ticker,
                     "Strategy": strategy,
@@ -204,18 +204,36 @@ def run_and_display_batch_mode(n_clicks, tickers_val):
 
     # Format the dictionary into read-only text inputs grouped by Strategy
     result_elements = []
+    fifty_two_week_elements = []
+    
     for strategy, tickers_list in results.items():
         tickers_str = "; ".join(tickers_list)
-        result_elements.append(
-            dbc.Row([
-                dbc.Col([
-                    dbc.Label(f"{strategy}:", className="fw-bold"),
-                    dbc.Input(value=tickers_str, type="text", readonly=True, className="mb-2")
-                ])
+        row = dbc.Row([
+            dbc.Col([
+                dbc.Label(f"{strategy}:", className="fw-bold"),
+                dbc.Input(value=tickers_str, type="text", readonly=True, className="mb-2")
             ])
+        ])
+        if strategy == "52-Week Low Buy Zone":
+            fifty_two_week_elements.append(row)
+        else:
+            result_elements.append(row)
+
+    cards = []
+    if result_elements:
+        cards.append(
+            dbc.Card([
+                dbc.CardHeader(html.H5("Buy Zone Signals", className="mb-0")),
+                dbc.CardBody(result_elements)
+            ], className="mt-3")
+        )
+        
+    if fifty_two_week_elements:
+        cards.append(
+            dbc.Card([
+                dbc.CardHeader(html.H5("52-Week Low Buy Zone", className="mb-0")),
+                dbc.CardBody(fifty_two_week_elements)
+            ], className="mt-3")
         )
 
-    return dbc.Card([
-        dbc.CardHeader(html.H5("Buy Zone Signals", className="mb-0")),
-        dbc.CardBody(result_elements)
-    ], className="mt-3")
+    return html.Div(cards)

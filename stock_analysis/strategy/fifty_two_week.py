@@ -76,3 +76,14 @@ def get_signals(df_with_signals: pd.DataFrame):
         buy_signals = pd.DataFrame()
         sell_signals = pd.DataFrame()
     return buy_signals, sell_signals
+
+def run(ticker: str, start_date_obj, end_date_obj) -> bool:
+    """Runs the 52-Week Range strategy for a ticker and returns True if it's in the buy zone."""
+    from utils import load_data
+    df = load_data(ticker, start_date_obj, end_date_obj)
+    if df is None or df.empty:
+        return False
+    df = apply_strategy(df)
+    if df.empty or 'Signal' not in df.columns:
+        return False
+    return df.iloc[-1]['Signal'] == 1.0

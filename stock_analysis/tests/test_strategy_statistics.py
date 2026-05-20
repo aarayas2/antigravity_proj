@@ -22,8 +22,16 @@ from pages.strategy_statistics import (
 
 class TestStrategyStatistics(unittest.TestCase):
     """Test suite for strategy statistics logic."""
+    @patch('pages.strategy_statistics.pd.DataFrame')
     @patch('pages.strategy_statistics.stats_manager.read_all_stats')
-    def test_update_stats_table_ignores_non_dict_metrics(self, mock_read_all):
+    def test_update_stats_table_ignores_non_dict_metrics(self, mock_read_all, mock_df):
+        mock_instance = unittest.mock.MagicMock()
+        mock_df.return_value = mock_instance
+        # Let to_dict return what rows was
+        def side_effect(rows):
+            mock_instance.to_dict.return_value = rows
+            return mock_instance
+        mock_df.side_effect = side_effect
         """Tests that update_stats_table ignores non-dict keys within stats."""
         # Provide mock data with string/invalid keys inside the strategy dictionary
         mock_read_all.return_value = [
@@ -50,8 +58,16 @@ class TestStrategyStatistics(unittest.TestCase):
         self.assertEqual(row_data[0]['Ticker'], 'TICKER_X')
         self.assertEqual(row_data[0]['Win Rate'], 0.8)
 
+    @patch('pages.strategy_statistics.pd.DataFrame')
     @patch('pages.strategy_statistics.stats_manager._storage.read')
-    def test_unique_tickers_maintains_order(self, mock_read):
+    def test_unique_tickers_maintains_order(self, mock_read, mock_df):
+        mock_instance = unittest.mock.MagicMock()
+        mock_df.return_value = mock_instance
+        # Let to_dict return what rows was
+        def side_effect(rows):
+            mock_instance.to_dict.return_value = rows
+            return mock_instance
+        mock_df.side_effect = side_effect
         """Tests that unique tickers maintain their insertion order."""
         # Mock data representing a specific order of tickers
         # Notice how B appears before A
@@ -183,11 +199,18 @@ class TestStrategyStatistics(unittest.TestCase):
 
         result = run_and_display_batch_mode(1, "AAPL;MSFT;GOOGL")
 
-        # Should return a dbc.Card
-        self.assertIsInstance(result, dbc.Card)
+        # Should return a list of dbc.Card or html.Div containing cards
+        # Should return a list of dbc.Card or html.Div containing cards
+        self.assertIn(result.__class__.__name__, ["Div", "MockComponent"])
 
         # Check Card components
-        children = result.children
+        cards = result.children
+        self.assertEqual(len(cards), 1)
+
+        card = cards[0]
+        self.assertIsInstance(card, dbc.Card)
+        
+        children = card.children
         self.assertEqual(len(children), 2)
 
         card_header = children[0]

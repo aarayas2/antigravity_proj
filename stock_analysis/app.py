@@ -20,6 +20,7 @@ from utils import stats_manager, get_date_ranges  # pylint: disable=wrong-import
 from pages.strategy_chart import layout as strategy_chart_layout  # pylint: disable=wrong-import-position,import-error
 from pages.strategy_chart import run_analysis_for_ticker  # pylint: disable=wrong-import-position,import-error
 from pages.strategy_statistics import layout as strategy_statistics_layout  # pylint: disable=wrong-import-position,import-error
+from strategy import fifty_two_week  # pylint: disable=wrong-import-position,import-error
 
 # Dash App Initialization
 app = Dash(
@@ -65,20 +66,42 @@ def run_batch_mode(tickers_str: str):  # pylint: disable=too-many-locals
     with concurrent.futures.ProcessPoolExecutor(max_workers=min(len(tickers), 10)) as executor:
         # We must use the top-level function directly or a partial, because ProcessPoolExecutor
         # requires picklable functions (nested functions are not picklable).
-        future_to_ticker = {
-            executor.submit(
+        # Submit both standard analysis and the 52-week strategy for each ticker
+        ticker_futures = {}
+        for ticker in tickers:
+            main_future = executor.submit(
                 run_analysis_for_ticker, ticker, start_date_obj, end_date_obj, is_batch_mode=True
-            ): ticker for ticker in tickers
-        }
-        for future in concurrent.futures.as_completed(future_to_ticker):
-            ticker = future_to_ticker[future]
+            )
+            fifty_two_week_future = executor.submit(
+                fifty_two_week.run, ticker, start_date_obj, end_date_obj
+            )
+            ticker_futures[ticker] = (main_future, fifty_two_week_future)
+            
+        for ticker, (main_future, fifty_two_week_future) in ticker_futures.items():
             try:
-                result = future.result()
+                result = main_future.result()
                 if result is None:
                     print(f"[{ticker}] Failed to load data.")
                     continue
                 print(f"[{ticker}] Analysis complete.")
 
+                try:
+                    is_in_buy_zone = fifty_two_week_future.result()
+                except Exception as exc:
+                    print(f"[{ticker}] 52-week strategy generated an exception: {exc}")
+                    is_in_buy_zone = False
+
+                if is_in_buy_zone:
+                    if "52-Week Low Buy Zone" not in strategy_groups:
+                        strategy_groups["52-Week Low Buy Zone"] = []
+                    strategy_groups["52-Week Low Buy Zone"].append(ticker)
+                    result["metrics"]["52-Week Low Buy Zone"] = {
+                        "Total Return": 0.0,
+                        "Average Return": 0.0,
+                        "Number of Trades": 'N/A',
+                        "Win Rate": 0.0
+                    }
+                    
                 # Collect stats for batch save
                 batch_stats.append({
                     'ticker': ticker,
@@ -91,6 +114,8 @@ def run_batch_mode(tickers_str: str):  # pylint: disable=too-many-locals
 
                 if result.get("buy_signals"):
                     for strategy in result["buy_signals"]:
+                        if strategy not in strategy_groups:
+                            strategy_groups[strategy] = []
                         strategy_groups[strategy].append(ticker)
             except Exception as exc:  # pylint: disable=broad-except
                 print(f"[{ticker}] generated an exception: {exc}")
