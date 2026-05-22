@@ -231,7 +231,7 @@ def run_and_display_batch_mode(n_clicks, tickers_val):
     if fifty_two_week_elements:
         cards.append(
             dbc.Card([
-                dbc.CardHeader(html.H5("52-Week Low Buy Zone", className="mb-0")),
+                # dbc.CardHeader(html.H5("52-Week Low Buy Zone", className="mb-0")),
                 dbc.CardBody(fifty_two_week_elements)
             ], className="mt-3")
         )
