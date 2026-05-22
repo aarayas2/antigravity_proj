@@ -13,22 +13,22 @@ def apply_strategy(df: pd.DataFrame) -> pd.DataFrame:
         return df
 
     # Calculate 52-week high and low (assuming ~252 trading days in a year)
-    df['52W_High'] = df['High'].rolling(window=252, min_periods=1).max()
+    #df['52W_High'] = df['High'].rolling(window=252, min_periods=1).max()
     df['52W_Low'] = df['Low'].rolling(window=252, min_periods=1).min()
 
     df['Signal'] = 0.0
 
     # Conditions:
-    # 1. Price is within 15% of the 52-week low: Close <= 52W_Low * 1.15
-    # 2. Price is within 10% of the 52-week high: Close >= 52W_High * 0.90
+    # Price is within 15% of the 52-week low: Close <= 52W_Low * 1.15
     cond1 = df['Close'] <= df['52W_Low'] * 1.15
-    cond2 = df['Close'] >= df['52W_High'] * 0.90
 
-    df.loc[cond1 & cond2, 'Signal'] = 1.0
+    df.loc[cond1, 'Signal'] = 1.0
 
     # Since it's just checking conditions, we use Signal as Position directly
     # or calculate Position based on Signal diff?
     df['Position'] = df['Signal']
+
+    print(f"apply_strategy : {df['Signal']}")
     return df
 
 def needs_subplots() -> bool:
