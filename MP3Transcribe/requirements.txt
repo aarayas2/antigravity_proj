@@ -1,0 +1,3 @@
+faster-whisper
+fpdf2
+tqdm
