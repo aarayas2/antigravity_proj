@@ -133,12 +133,8 @@ class StatsManager:
 
                 if ticker in data_dict:
                     idx, existing_entry = data_dict[ticker]
-                    if (existing_entry.get("date-begin") == date_begin and
-                            existing_entry.get("date-end") == date_end):
-                        pass # No operation needed
-                    else:
-                        data[idx][ticker] = new_entry_data
-                        modified = True
+                    data[idx][ticker] = new_entry_data
+                    modified = True
                 else:
                     data.append({ticker: new_entry_data})
                     data_dict[ticker] = (len(data) - 1, new_entry_data)
