@@ -168,12 +168,12 @@ def test_stats_manager_save_stats_existing_ticker_same_dates(tmp_path):
     manager.save_stats("AAPL", "2023-01-01", "2023-12-31", {"SMA": {"profit": 100}})
 
     # Save again with same dates but different metrics
-    # It should early-return and do nothing
+    # It should update the metrics
     manager.save_stats("AAPL", "2023-01-01", "2023-12-31", {"SMA": {"profit": 999}})
 
     data = storage.read()
     assert len(data) == 1
-    assert data[0]["AAPL"]["SMA"]["profit"] == 100
+    assert data[0]["AAPL"]["SMA"]["profit"] == 999
 
 def test_stats_manager_save_stats_existing_ticker_diff_dates(tmp_path):
     """Test save stats existing ticker diff dates."""
@@ -980,7 +980,7 @@ def test_stats_manager_save_stats_batch(tmp_path):
         {
             "ticker": "MSFT",
             "date_begin": "2023-01-01",
-            "date_end": "2023-12-31", # same date, should do nothing
+            "date_end": "2023-12-31", # same date, should update
             "strategies_metrics": {"EMA": {"profit": 999}}
         },
         {
@@ -1001,6 +1001,6 @@ def test_stats_manager_save_stats_batch(tmp_path):
             data_dict[k] = v
 
     assert data_dict["AAPL"]["SMA"]["profit"] == 200 # updated
-    assert data_dict["MSFT"]["EMA"]["profit"] == 50 # not updated
+    assert data_dict["MSFT"]["EMA"]["profit"] == 999 # updated
     assert "TSLA" in data_dict
     assert data_dict["TSLA"]["RSI"]["profit"] == 300
