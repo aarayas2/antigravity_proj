@@ -2,6 +2,12 @@
 Tests for path traversal vulnerabilities.
 """
 
+import sys
+import types
+from unittest.mock import MagicMock
+
+
+
 import os
 import sys
 

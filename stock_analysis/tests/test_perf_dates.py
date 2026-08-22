@@ -1,6 +1,12 @@
 """
 Performance test for batch analysis.
 """
+
+import sys
+import types
+from unittest.mock import MagicMock
+
+
 import contextlib
 import io
 import os

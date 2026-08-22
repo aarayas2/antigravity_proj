@@ -1,4 +1,9 @@
 """Unit tests for the utils module."""
+
+import sys
+import types
+from unittest.mock import MagicMock
+
 # pylint: disable=too-many-lines, protected-access, import-outside-toplevel
 # pylint: disable=unused-argument, redefined-outer-name, reimported, unused-variable, unused-import
 # pylint: disable=too-many-locals, line-too-long
@@ -7,6 +12,9 @@ import os
 import sys
 import unittest
 from unittest.mock import MagicMock, patch
+
+# Inject mocks before pandas and utils imports
+
 import pandas as pd
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -941,19 +949,6 @@ class TestCompilePerformanceMetrics(unittest.TestCase):
 
 class TestTradeEvaluator(unittest.TestCase):
     """Tests for TradeEvaluator."""
-    def setUp(self):
-        """Setup mocks."""
-        # Mock pandas and yfinance for the restricted sandbox environment
-        self.patcher_pd = patch.dict('sys.modules', {'pandas': MagicMock()})
-        self.patcher_yf = patch.dict('sys.modules', {'yfinance': MagicMock()})
-        self.patcher_pd.start()
-        self.patcher_yf.start()
-
-    def tearDown(self):
-        """Teardown mocks."""
-        self.patcher_pd.stop()
-        self.patcher_yf.stop()
-
     def test_successful_buy(self):
         """Test valid buy trade process."""
         from utils import _TradeEvaluator
@@ -975,14 +970,14 @@ class TestTradeEvaluator(unittest.TestCase):
         self.assertIsNone(evaluator.buy_date)
 
     def test_insufficient_capital_exact_equality(self):
-        """Test buy fails if capital is exactly price."""
+        """Test buy works if capital is exactly price."""
         from utils import _TradeEvaluator
         evaluator = _TradeEvaluator(100)
         evaluator.process_buy("2023-01-01", 100)
-        self.assertEqual(evaluator.position_size, 0)
-        self.assertEqual(evaluator.capital, 100)
-        self.assertEqual(evaluator.buy_price, 0)
-        self.assertIsNone(evaluator.buy_date)
+        self.assertEqual(evaluator.position_size, 1)
+        self.assertEqual(evaluator.capital, 0)
+        self.assertEqual(evaluator.buy_price, 100)
+        self.assertEqual(evaluator.buy_date, "2023-01-01")
 
     def test_zero_and_negative_price_handling(self):
         """Test buy fails gracefully on non-positive prices."""

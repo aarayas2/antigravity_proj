@@ -3,6 +3,12 @@ Unit tests for the main application module (app.py).
 """
 
 import sys
+import types
+from unittest.mock import MagicMock
+
+
+
+import sys
 import os
 import datetime
 from unittest.mock import patch

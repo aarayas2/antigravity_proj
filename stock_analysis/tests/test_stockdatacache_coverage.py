@@ -3,6 +3,12 @@ Tests for StockDataCache coverage, including edge cases like path traversal and 
 """
 
 import sys
+import types
+from unittest.mock import MagicMock
+
+
+
+import sys
 import os
 import unittest
 import datetime

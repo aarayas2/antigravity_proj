@@ -1,11 +1,18 @@
 """
 Tests for trade visualizations and tooltips.
 """
+
+import sys
+import types
+from unittest.mock import MagicMock
+
 import os
 import sys
 import unittest
 from datetime import datetime
-from unittest.mock import Mock
+from unittest.mock import Mock, MagicMock
+
+# Inject mocks before imports
 
 import pandas as pd
 

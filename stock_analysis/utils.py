@@ -223,7 +223,7 @@ class _TradeEvaluator:
 
     def process_buy(self, date, price):
         """Processes a buy signal."""
-        if self.capital > price > 0:
+        if self.capital >= price > 0:
             shares_to_buy = self.capital // price
             self.position_size += shares_to_buy
             self.capital -= shares_to_buy * price

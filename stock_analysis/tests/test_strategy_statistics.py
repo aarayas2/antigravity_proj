@@ -1,6 +1,12 @@
 """
 Tests for the strategy statistics page logic.
 """
+
+import sys
+import types
+from unittest.mock import MagicMock
+
+
 import sys
 import os
 import unittest
