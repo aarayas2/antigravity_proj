@@ -1,7 +1,14 @@
 """Tests for MACD strategy."""
+
+import sys
+import types
+from unittest.mock import MagicMock
+
 import os
 import sys
 from unittest.mock import MagicMock, patch
+
+# Inject mocks
 
 import numpy as np
 import pandas as pd

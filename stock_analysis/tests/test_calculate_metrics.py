@@ -1,4 +1,10 @@
 """Unit tests for the calculate_metrics function in the utils module."""
+
+import sys
+import types
+from unittest.mock import MagicMock
+
+
 import sys
 import os
 import unittest

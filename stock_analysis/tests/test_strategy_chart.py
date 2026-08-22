@@ -1,6 +1,12 @@
 """
 Tests for the strategy chart page logic.
 """
+
+import sys
+import types
+from unittest.mock import MagicMock
+
+
 import datetime
 from unittest.mock import patch, MagicMock
 

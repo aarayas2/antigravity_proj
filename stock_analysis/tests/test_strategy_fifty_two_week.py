@@ -1,13 +1,15 @@
+
+
+import sys
+import types
+from unittest.mock import MagicMock
+
 import unittest
 from unittest.mock import MagicMock, patch
 import sys
 import os
 
 # Mock dependencies
-sys.modules['pandas'] = MagicMock()
-sys.modules['plotly'] = MagicMock()
-sys.modules['plotly.graph_objects'] = MagicMock()
-sys.modules['pandas_ta'] = MagicMock()
 
 import importlib.util
 # Need absolute path since tests are run from various locations
@@ -51,9 +53,11 @@ class TestFiftyTwoWeekStrategy(unittest.TestCase):
         self.assertEqual(buy, mock_buy)
         self.assertEqual(sell, mock_sell)
 
-    def test_add_traces(self):
+    @patch('strategy.fifty_two_week.go.Scatter')
+    def test_add_traces(self, mock_scatter):
         mock_fig = MagicMock()
         mock_df = MagicMock()
+        mock_df.index = [1, 2, 3]
         mock_df.columns = ['52W_High', '52W_Low']
         
         fifty_two_week.add_traces(mock_fig, mock_df, 1, 1)

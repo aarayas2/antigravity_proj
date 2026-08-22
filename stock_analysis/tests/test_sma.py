@@ -1,5 +1,11 @@
 """Unit tests for the SMA strategy."""
 
+import sys
+import types
+from unittest.mock import MagicMock
+
+
+
 import os
 import sys
 from unittest.mock import MagicMock, patch

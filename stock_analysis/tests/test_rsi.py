@@ -1,4 +1,10 @@
 """Unit tests for the RSI strategy module."""
+
+import sys
+import types
+from unittest.mock import MagicMock
+
+
 import os
 import sys
 from unittest.mock import MagicMock, patch

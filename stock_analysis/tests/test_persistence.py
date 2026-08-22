@@ -1,7 +1,13 @@
 """
 Unit tests for persistence.py.
 """
+
+import sys
+import types
+from unittest.mock import MagicMock
+
 # pylint: disable=too-few-public-methods,line-too-long,import-error,useless-parent-delegation,protected-access,unused-variable,unnecessary-pass,too-many-lines
+
 import json
 import os
 import sys

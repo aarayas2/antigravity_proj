@@ -1,4 +1,10 @@
 """Unit tests for the charting module."""
+
+import sys
+import types
+from unittest.mock import MagicMock
+
+
 from unittest.mock import MagicMock, patch
 
 import pandas as pd

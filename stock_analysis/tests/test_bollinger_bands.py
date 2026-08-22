@@ -1,4 +1,10 @@
 """Tests for Bollinger Bands strategy."""
+
+import sys
+import types
+from unittest.mock import MagicMock
+
+
 import os
 import sys
 from unittest.mock import MagicMock, patch
